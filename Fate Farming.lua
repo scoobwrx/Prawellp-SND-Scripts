@@ -546,6 +546,33 @@ function TeleportTo(aetheryteName)
     LastTeleportTimeStamp = EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp())
 end
 
+function Mount(mount_name)
+    local max_retries = 10     -- Maximum number of retries
+    local retry_interval = 1.0 -- Time interval between retries in seconds
+    local retries = 0          -- Counter for the number of retries
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        return
+    end
+    repeat
+        yield("/wait 0.1")
+    until IsPlayerAvailable() and not IsPlayerCasting() and not GetCharacterCondition(CharacterCondition.inCombat)
+    while retries < max_retries do
+        if mount_name == nil then
+            yield('/gaction "mount roulette"')
+        else
+            yield('/mount "' .. mount_name .. '"')
+        end
+        yield("/wait " .. retry_interval)
+        if GetCharacterCondition(CharacterCondition.mounted) then
+            break
+        end
+        retries = retries + 1
+    end
+    repeat
+        yield("/wait 0.1")
+    until IsPlayerAvailable() and GetCharacterCondition(CharacterCondition.mounted)
+end
+
 function HandleUnexpectedCombat()
     TurnOnRSR()
     while GetCharacterCondition(CharacterCondition.inCombat)do
@@ -751,12 +778,9 @@ function MoveToFate(nextFate)
     TeleportToClosestAetheryteToFate(playerPosition, nextFate)
 
     while not IsInFate() and not GetCharacterCondition(CharacterCondition.mounted) do
-        yield("/wait 3")
-        yield('/gaction "mount roulette"')
-        yield("/wait 3")
+        Mount()
         if GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.flying) and HasFlightUnlocked(SelectedZone.zoneId) then
             yield("/gaction jump")
-            yield("/wait 2")
         end
     end
 
