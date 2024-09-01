@@ -111,6 +111,12 @@ CompletionToJoinBossFate = 20   --Percent above which to join boss fate
 fatewait = 0                    --the amount how long it should when before dismounting (0 = at the beginning of the fate 3-5 = should be in the middle of the fate)
 useBMR = true                   --if you want to use the BossMod dodge/follow mode
 
+--Ranged attacks and spells max distance to be usable is 25.49y, 25.5 is "target out of range"
+--Melee attacks (auto attacks) max distance is 2.59y, 2.60 is "target out of range"
+--ranged and casters have a further max distance so not always running all way up to target
+--users can adjust below settings to their liking
+MeleeDist = 2.5                 --distance for BMRAI melee
+RangedDist = 5                  --distance for BMRAI ranged
 
 --Utilities
 RepairAmount = 20          --the amount it needs to drop before Repairing (set it to 0 if you don't want it to repaier. onky supports self repair)
@@ -489,7 +495,9 @@ FatesData = {
                 "Lepus Lamentorum: Crazy Contraption",
                 "Head Empty, Only Thoughts"
             },
-            blacklistedFates= {}
+            blacklistedFates= {
+                "Hunger Strikes", --really bad line of sight with rocks, get stuck not doing anything quite often
+            }
         }
     },
     {
@@ -741,16 +749,7 @@ end
 
 --Optional Plugin Warning
 if EnableChangeInstance == true  then
-    -- Only DT zones with instances currently
-    -- Urqopacha, Kozama'uka, Yak T'el, Shaaloani, Heritage Found, Living Memory
-    if not IsInZone(1187) and --Urqopacha
-       not IsInZone(1188) and --Kozama'uka
-       not IsInZone(1189) and --Yak T'el
-       not IsInZone(1190) and --Shaaloani
-       not IsInZone(1191) and --Heritage Found
-       not IsInZone(1192) then --Living Memory
-        EnableChangeInstance = false
-    elseif HasPlugin("Lifestream") == false then
+    if HasPlugin("Lifestream") == false then
         yield("/echo [FATE] Please Install Lifestream or Disable ChangeInstance in the settings")
     end
 end
@@ -1215,44 +1214,9 @@ function antistuck()
     PXX = GetPlayerRawXPos()
     PYY = GetPlayerRawYPos()
     PZZ = GetPlayerRawZPos()
-    --[[
-        Gladiator => 1
-        Pugilist => 2
-        Marauder => 3
-        Lancer => 4
-        Archer => 5
-        Conjurer => 6
-        Thaumaturge => 7
-        Paladin => 19
-        Monk => 20
-        Warrior => 21
-        Dragoon => 22
-        Bard => 23
-        WhiteMage => 24
-        BlackMage => 25
-        Arcanist => 26
-        Summoner => 27
-        Scholar => 28
-        Rogue => 29
-        Ninja => 30
-        Machinist => 31
-        DarkKnight => 32
-        Astrologian => 33
-        Samurai => 34
-        RedMage => 35
-        BlueMage => 36
-        Gunbreaker => 37
-        Dancer => 38
-        Reaper => 39
-        Sage => 40
-        Viper => 41
-        Pictomancer => 42
-    --]]
-    --Ranged attacks and spells max distance to be usable is 25.49y, 25.5 is "target out of range"
-    --Melee attacks (auto attacks) max distance is 2.59y, 2.60 is "target out of range"
-    --ranged and casters have a further max distance so not always running all way up to target
+
     local ClassJob = GetClassJobId()
-    local AntiStuckDist = 3.5 -- default to melee distance
+    local AntiStuckDist = MeleeDist-- default to melee distance
     if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
        ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
        ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
@@ -1263,7 +1227,7 @@ function antistuck()
        ClassJob == 38 or -- Dancer
        ClassJob == 40 or -- Sage
        ClassJob == 42 then -- Pictomancer
-        AntiStuckDist = 20 -- max distance for ranged to attack is 25.5
+        AntiStuckDist = RangedDist -- max distance for ranged to attack is 25.5
     end
 
     if PX == PXX and PY == PYY and PZ == PZZ then
@@ -1422,8 +1386,14 @@ while true do
         CurrentFate = SelectNextFate()
     end
     while CurrentFate == nil do
-        LogInfo("[FATE] Changing instances.")
-        ChangeInstance()
+        if EnableChangeInstance and GetZoneInstance() > 0 then
+            LogInfo("[FATE] Changing instances.")
+            ChangeInstance()
+
+        else
+            yield("/wait 10")
+            CurrentFate = SelectNextFate()
+        end
     end
     
     --Announcement for gems
@@ -1481,11 +1451,11 @@ while true do
         LogInfo("[FATE] Arrived at Fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
         yield("/vnavmesh stop")
         if GetCharacterCondition(CharacterCondition.flying) then
-            yield("/echo Landing...")
-            yield("/gaction dismount") -- first dismount call only lands the mount
+        yield("/echo Landing...")
+        yield("/gaction dismount") -- first dismount call only lands the mount
             yield("/wait 3")
-            while GetCharacterCondition(CharacterCondition.flying) do
-                antistuck()
+        while GetCharacterCondition(CharacterCondition.flying) do
+            antistuck()
             end
         end
         yield("/echo Dismounting...")
@@ -1523,47 +1493,12 @@ while true do
         --Activates Bossmod upon landing in a fate
         if not GetCharacterCondition(CharacterCondition.mounted) and not bossModAIActive then 
             if useBMR then
-                --[[
-                    Ranged attacks and spells max distance to be usable is 25.49y, 25.5 is "target out of range"
-                    Melee attacks (auto attacks) max distance is 2.59y, 2.60 is "target out of range"
-                    Gladiator => 1
-                    Pugilist => 2
-                    Marauder => 3
-                    Lancer => 4
-                    Archer => 5
-                    Conjurer => 6
-                    Thaumaturge => 7
-                    Paladin => 19
-                    Monk => 20
-                    Warrior => 21
-                    Dragoon => 22
-                    Bard => 23
-                    WhiteMage => 24
-                    BlackMage => 25
-                    Arcanist => 26
-                    Summoner => 27
-                    Scholar => 28
-                    Rogue => 29
-                    Ninja => 30
-                    Machinist => 31
-                    DarkKnight => 32
-                    Astrologian => 33
-                    Samurai => 34
-                    RedMage => 35
-                    BlueMage => 36
-                    Gunbreaker => 37
-                    Dancer => 38
-                    Reaper => 39
-                    Sage => 40
-                    Viper => 41
-                    Pictomancer => 42
-                --]]
                 yield("/bmrai on")
                 yield("/bmrai followtarget on")
                 yield("/bmrai followcombat on")
                 yield("/bmrai followoutofcombat on")
                 local ClassJob = GetClassJobId()
-                local MaxDistance = 2.5 --default to melee distance
+                local MaxDistance = MeleeDist --default to melee distance
                 --ranged and casters have a further max distance so not always running all way up to target
                 if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
                    ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
@@ -1575,7 +1510,7 @@ while true do
                    ClassJob == 38 or -- Dancer
                    ClassJob == 40 or -- Sage
                    ClassJob == 42 then -- Pictomancer
-                   MaxDistance = 15
+                   MaxDistance = RangedDist
                 end
                 yield("/bmrai maxdistancetarget " .. MaxDistance)
                 bossModAIActive = true
@@ -1769,7 +1704,7 @@ while true do
     end
 
 
-------------------------------Vouchers-----------------------------------------------
+    ------------------------------Vouchers-----------------------------------------------
     --old Vouchers!
     if gems > 1400 and Exchange == true and OldV == true then
         LogInfo("[FATE] Exchanging for old vouchers.")
