@@ -697,7 +697,7 @@ end
 
 --Fate settings
 if UsePandoraSync then
-PandoraSetFeatureState("Auto-Sync FATEs", true)
+    PandoraSetFeatureState("Auto-Sync FATEs", true)
 else
     PandoraSetFeatureState("Auto-Sync FATEs", false)
 end
@@ -1098,12 +1098,12 @@ function InteractWithFateNpc(fate)
             ClearTarget()
             yield("/wait 1")
         end
-        end
+    end
     yield("/wait 1")
     yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
     yield("/echo [FATE] Fate begun")
-        LogInfo("[FATE] Exiting InteractWithFateNpc")
-    end
+    LogInfo("[FATE] Exiting InteractWithFateNpc")
+end
 
 --Paths to the enemy (for Meele)
 function EnemyPathing()
@@ -1770,7 +1770,7 @@ while true do
 
 
 ------------------------------Vouchers-----------------------------------------------
---old Vouchers!
+    --old Vouchers!
     if gems > 1400 and Exchange == true and OldV == true then
         LogInfo("[FATE] Exchanging for old vouchers.")
         TeleportTo("Old Sharlayan")
