@@ -1235,7 +1235,7 @@ function TurnOffCombatMods()
     -- no need to turn RSR off
 
     -- turn of BMR so you don't start engaging other mobs
-    if useBMR then
+    if useBMR and bossModAIActive then
         yield("/bmrai off")
         yield("/bmrai followtarget off")
         yield("/bmrai followcombat off")
@@ -1530,32 +1530,7 @@ while true do
         end
 
         --Activates Bossmod upon landing in a fate
-        if not GetCharacterCondition(CharacterCondition.mounted) and not bossModAIActive then 
-            if useBMR then
-                yield("/bmrai on")
-                yield("/bmrai followtarget on")
-                yield("/bmrai followcombat on")
-                yield("/bmrai followoutofcombat on")
-                local ClassJob = GetClassJobId()
-                local MaxDistance = MeleeDist --default to melee distance
-                --ranged and casters have a further max distance so not always running all way up to target
-                if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
-                   ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
-                   ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
-                   ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
-                   ClassJob == 31 or -- Machinist
-                   ClassJob == 33 or -- Astrologian
-                   ClassJob == 35 or -- Red Mage
-                   ClassJob == 38 or -- Dancer
-                   ClassJob == 40 or -- Sage
-                   ClassJob == 42 then -- Pictomancer
-                   MaxDistance = RangedDist
-                end
-                yield("/bmrai maxdistancetarget " .. MaxDistance)
-                bossModAIActive = true
-                yield("/wait 3")
-            end
-        end
+        TurnOnCombatMods()
 
         --Paths to enemys when Bossmod is disabled
         if not useBMR then 
@@ -1577,7 +1552,7 @@ while true do
     end
 
     --Disables bossmod when the fate is over
-    if not IsInFate() and bossModAIActive then 
+    if not IsInFate() then
         TurnOffCombatMods()
     end
     yield("/echo [FATE] No longer in fate.")
