@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.0.7  *
+  *  1.0.8  *
   ***********
-    -> 1.0.7    Added partial support for other areas
+    -> 1.0.8    Added partial support for other areas
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -1726,12 +1726,12 @@ while true do
                 yield("/wait 1")
             end
             if GetCharacterCondition(31) == true then
-                yield("/callback ShopExchangeCurrency false 0 5 13") --Change the last number "13" to the amount u want to buy 
+                yield("/callback ShopExchangeCurrency false 0 5 "..(gems//100)) --Change the last number to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
                 yield("/wait 1")
-                yield("/callback SelectYesno true 0")
-                yield("/wait 1")
-                yield("/callback ShopExchangeCurrency true -1")
-                yield("/wait 1")
+                while IsAddonVisible("ShopExchangeCurrency") do
+                    yield("/callback ShopExchangeCurrency true -1")
+                    yield("/wait 1")
+                end
             end
         end
     end
@@ -1789,12 +1789,14 @@ while true do
                 end
 
                 if IsInZone(1186) and GetCharacterCondition(31) == true and IsAddonVisible("ShopExchangeCurrency") then
-                    yield("/callback ShopExchangeCurrency false 0 5 13") --Change the last number "13" to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
-                    yield("/wait 0.5")
-                    yield("/callback SelectYesno true 0")
-                    yield("/wait 0.5")
-                    yield("/callback ShopExchangeCurrency true -1")
+                    yield("/callback ShopExchangeCurrency false 0 5 "..(gems//100)) --Change the last number to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
                     yield("/wait 1")
+                    -- yield("/callback SelectYesno true 0") -- textadvanced might take care of this
+                    -- yield("/wait 0.5")
+                    while IsAddonVisible("ShopExchangeCurrency") do
+                        yield("/callback ShopExchangeCurrency true -1")
+                        yield("/wait 1")
+                    end
                 end
             end
         end
