@@ -536,7 +536,7 @@ FatesData = {
             },
             otherNpcFates= {},
             bossFates= {
-                "Grand Designs: lo",
+                "Grand Designs: Io",
                 "The Rustling of Murderous Leaves",
                 "Grand Designs: The Newest of New",
                 "Eurydike: All Bark, No Bite",
@@ -814,7 +814,7 @@ function TeleportTo(aetheryteName)
 end
 
 function HandleUnexpectedCombat()
-    TurnOnRSR()
+    TurnOnCombatMods()
     while GetCharacterCondition(CharacterCondition.inCombat)do
         if not HasTarget() or GetTargetHP() <= 0 then
             yield("/battletarget")
@@ -1170,7 +1170,6 @@ function ChangeInstance()
             LogInfo("[FATE] Waiting for instance transfer to complete...")
             yield("/wait 1")
         end
-        CurrentFate = SelectNextFate()
         yield("/lockon off")
     end
 end
@@ -1192,7 +1191,8 @@ function AvoidEnemiesWhileFlying()
     end
 end
 
-function TurnOnRSR()
+function TurnOnCombatMods()
+    -- turn on RSR in case you have the RSR 30 second out of combat timer set
     yield("/rotation manual")
     Class = GetClassJobId()
     
@@ -1202,6 +1202,46 @@ function TurnOnRSR()
         yield("/rotation settings aoetype 1") -- cleave
     end
     yield("/wait 1")
+
+    if not bossModAIActive and useBMR then
+        yield("/bmrai on")
+        yield("/bmrai followtarget on")
+        yield("/bmrai followcombat on")
+        yield("/bmrai followoutofcombat on")
+
+        local ClassJob = GetClassJobId()
+        local MaxDistance = MeleeDist --default to melee distance
+        --ranged and casters have a further max distance so not always running all way up to target
+        if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
+            ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
+            ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
+            ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
+            ClassJob == 31 or -- Machinist
+            ClassJob == 33 or -- Astrologian
+            ClassJob == 35 or -- Red Mage
+            ClassJob == 38 or -- Dancer
+            ClassJob == 40 or -- Sage
+            ClassJob == 42 -- Pictomancer
+        then
+            MaxDistance = RangedDist
+        end
+        yield("/bmrai maxdistancetarget " .. MaxDistance)
+        bossModAIActive = true
+    end
+    yield("/wait 1")
+end
+
+function TurnOffCombatMods()
+    -- no need to turn RSR off
+
+    -- turn of BMR so you don't start engaging other mobs
+    if useBMR then
+        yield("/bmrai off")
+        yield("/bmrai followtarget off")
+        yield("/bmrai followcombat off")
+        yield("/bmrai followoutofcombat off")
+        bossModAIActive = false
+    end
 end
 
 function antistuck()
@@ -1335,7 +1375,7 @@ LastTeleportTimeStamp = 0
 --Start of the Loop
 
 LogInfo("[FATE] Starting fate farming script.")
-TurnOnRSR()
+TurnOnCombatMods()
 
 while true do
     LogInfo("[FATE] Starting new iteration.")
@@ -1389,11 +1429,10 @@ while true do
         if EnableChangeInstance and GetZoneInstance() > 0 then
             LogInfo("[FATE] Changing instances.")
             ChangeInstance()
-
         else
             yield("/wait 10")
-            CurrentFate = SelectNextFate()
         end
+        CurrentFate = SelectNextFate()
     end
     
     --Announcement for gems
@@ -1451,11 +1490,11 @@ while true do
         LogInfo("[FATE] Arrived at Fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
         yield("/vnavmesh stop")
         if GetCharacterCondition(CharacterCondition.flying) then
-        yield("/echo Landing...")
-        yield("/gaction dismount") -- first dismount call only lands the mount
+            yield("/echo Landing...")
+            yield("/gaction dismount") -- first dismount call only lands the mount
             yield("/wait 3")
-        while GetCharacterCondition(CharacterCondition.flying) do
-            antistuck()
+            while GetCharacterCondition(CharacterCondition.flying) do
+                antistuck()
             end
         end
         yield("/echo Dismounting...")
@@ -1475,7 +1514,7 @@ while true do
         end
     end
 
-    TurnOnRSR()
+    TurnOnCombatMods()
     yield("/wait 3")
 
     -------------------------------Engage Fate Combat--------------------------------------------
@@ -1539,13 +1578,7 @@ while true do
 
     --Disables bossmod when the fate is over
     if not IsInFate() and bossModAIActive then 
-        if useBMR then
-            yield("/bmrai off")
-            yield("/bmrai followtarget off")
-            yield("/bmrai followcombat off")
-            yield("/bmrai followoutofcombat off")
-            bossModAIActive = false
-        end
+        TurnOffCombatMods()
     end
     yield("/echo [FATE] No longer in fate.")
 
