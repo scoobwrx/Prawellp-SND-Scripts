@@ -111,6 +111,12 @@ CompletionToJoinBossFate = 20   --Percent above which to join boss fate
 fatewait = 0                    --the amount how long it should when before dismounting (0 = at the beginning of the fate 3-5 = should be in the middle of the fate)
 useBMR = true                   --if you want to use the BossMod dodge/follow mode
 
+--Ranged attacks and spells max distance to be usable is 25.49y, 25.5 is "target out of range"
+--Melee attacks (auto attacks) max distance is 2.59y, 2.60 is "target out of range"
+--ranged and casters have a further max distance so not always running all way up to target
+--users can adjust below settings to their liking
+MeleeDist = 2.5                 --distance for BMRAI melee
+RangedDist = 5                  --distance for BMRAI ranged
 
 --Utilities
 RepairAmount = 20          --the amount it needs to drop before Repairing (set it to 0 if you don't want it to repaier. onky supports self repair)
@@ -275,6 +281,267 @@ FatesData = {
             bossFates= {},
             blacklistedFates= {
             }
+        }
+    },
+    {
+        zoneName = "Lakeland",
+        zoneId = 813,
+        aetheryteList = {
+            { aetheryteName="The Ostall Imperative", x=-735, y=53, z=-230 },
+            { aetheryteName="Fort Jobb", x=753, y=24, z=-28 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Pick-up Sticks",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Calm a Chameleon",
+                "A Beast among Men",
+                "Draconian Measures",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Kholusia",
+        zoneId = 814,
+        aetheryteList = {
+            { aetheryteName="Stilltide", x=668, y=29, z=289 },
+            { aetheryteName="Wright", x=-244, y=20, z=385 },
+            { aetheryteName="Tomra", x=-426, y=419, z=-623 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Ironbeard Builders - Rebuilt",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Not Today (FATE)",
+                "A Finale Most Formidable",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Amh Araeng",
+        zoneId = 815,
+        aetheryteList = {
+            { aetheryteName="Mord Souq", x=246, y=12, z=-220 },
+            { aetheryteName="Twine", x=-511, y=47, z=-212 },
+            { aetheryteName="The Inn at Journey's Head", x=399, y=-24, z=307 },
+        },
+        fatesList= {
+            collectionsFates= {},
+            otherNpcFates= {},
+            bossFates= {
+                "Bayawak Attack",
+                "The Elderblade",
+                "The Odd Couple",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Il Mheg",
+        zoneId = 816,
+        aetheryteList = {
+            { aetheryteName="Lydha Lran", x=-344, y=48, z=512 },
+            { aetheryteName="Wolekdorf", x=380, y=87, z=-687 },
+            { aetheryteName="Pla Enni", x=-72, y=103, z=-857 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Twice Upon a Time",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Thrice Upon a Time",
+                "Locus Terribilis",
+                "Mad Magic",
+                "Brute Fuath",
+                "Breaking the Fuath Wall",
+                "Go Fuath a Conqueror",
+                "Fuath to Be Reckoned With",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "The Rak'tika Greatwood",
+        zoneId = 817,
+        aetheryteList = {
+            { aetheryteName="Slitherbough", x=-103, y=-19, z=297 },
+            { aetheryteName="Fanow", x=382, y=21, z=-194 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Picking up the Pieces",
+                "Pluck of the Draw",
+                "Monkeying Around",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Attack of the Killer Tomatl",
+                "I'll Be Bark",
+                "Tojil War",
+                "Tojil Annihilation",
+                "Tojil Carnage",
+                "Tojil Eclipse",
+                "Attack the Block",
+                "Queen of the Harpies",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "The Tempest",
+        zoneId = 818,
+        aetheryteList = {
+            { aetheryteName="The Ondo Cups", x=561, y=352, z=-199 },
+            { aetheryteName="The Macarenses Angle", x=-141, y=-280, z=218 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Low Coral Fiber",
+                "Pearls Apart",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Ondo of Blood",
+                "The Devil in the Deep Blue Sea",
+                "The Head, the Tail, the Whole Damned Thing",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Labyrinthos",
+        zoneId = 956,
+        aetheryteList = {
+            { aetheryteName="The Archeion", x=443, y=170, z=-476 },
+            { aetheryteName="Sharlayan Hamlet", x=8, y=-27, z=-46 },
+            { aetheryteName="Aporia", x=-729, y=-27, z=302 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Sheaves on the Wind",
+                "Moisture Farming",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Let It Grow",
+                "Incident Files: Steamed Vegetable",
+                "The Frailty of Life",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Thavnair",
+        zoneId = 957,
+        aetheryteList = {
+            { aetheryteName="Yedlihmad", x=193, y=6, z=629 },
+            { aetheryteName="The Great Work", x=-527, y=4, z=36 },
+            { aetheryteName="Palaka's Stand", x=405, y=5, z=-244 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Full Petal ALchemist: Perilous Pickings",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "The Accursed Kanabhuti",
+                "Return of the Tyrant",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Garlemald",
+        zoneId = 958,
+        aetheryteList = {
+            { aetheryteName="Camp Broken Glass", x=-408, y=24, z=479 },
+            { aetheryteName="Tertium", x=518, y=-35, z=-178 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Parts Unknown",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Artificial Malevolence: 15 Minutes to Comply",
+                "Roses Are Red, Violence is Due",
+                "Artificial Malevolence: Mighty Metatron",
+                "The Man with the Golden Son",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Mare Lamentorum",
+        zoneId = 959,
+        aetheryteList = {
+            { aetheryteName="Sinus Lacrimarum", x=-566, y=134, z=650 },
+            { aetheryteName="Bestways Burrow", x=-0, y=-128, z=-512 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "What a Thrill",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "The Stones of Silence",
+                "Lepus Lamentorum: Crazy Contraption",
+                "Head Empty, Only Thoughts"
+            },
+            blacklistedFates= {
+                "Hunger Strikes", --really bad line of sight with rocks, get stuck not doing anything quite often
+            }
+        }
+    },
+    {
+        zoneName = "Ultima Thule",
+        zoneId = 960,
+        aetheryteList = {
+            { aetheryteName="Reah Tahra", x=-544, y=74, z=269 },
+            { aetheryteName="Abode of the Ea", x=64, y=272, z=-657 },
+            { aetheryteName="Base omicron", x=-489, y=437, z=333 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Omicron Recall: Comms Expansion"
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Far from the Madding Horde",
+                "Nevermore",
+                "Wings of Glory",
+                "Omicron Recall: Killing Order",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Elpis",
+        zoneId = 961,
+        aetheryteList = {
+            { aetheryteName="Anagnorisis", x=159, y=11, z=126 },
+            { aetheryteName="The Twelve Wonders", x=-633, y=-19, z=542 },
+            { aetheryteName="Poieten Oikos", x=-529, y=161, z=-222 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "So Sorry, Sokles",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Grand Designs: Io",
+                "The Rustling of Murderous Leaves",
+                "Grand Designs: The Newest of New",
+                "Eurydike: All Bark, No Bite",
+            },
+            blacklistedFates= {}
         }
     },
     {
@@ -547,7 +814,7 @@ function TeleportTo(aetheryteName)
 end
 
 function HandleUnexpectedCombat()
-    TurnOnRSR()
+    TurnOnCombatMods()
     while GetCharacterCondition(CharacterCondition.inCombat)do
         if not HasTarget() or GetTargetHP() <= 0 then
             yield("/battletarget")
@@ -903,7 +1170,6 @@ function ChangeInstance()
             LogInfo("[FATE] Waiting for instance transfer to complete...")
             yield("/wait 1")
         end
-        CurrentFate = SelectNextFate()
         yield("/lockon off")
     end
 end
@@ -925,7 +1191,8 @@ function AvoidEnemiesWhileFlying()
     end
 end
 
-function TurnOnRSR()
+function TurnOnCombatMods()
+    -- turn on RSR in case you have the RSR 30 second out of combat timer set
     yield("/rotation manual")
     Class = GetClassJobId()
     
@@ -935,6 +1202,46 @@ function TurnOnRSR()
         yield("/rotation settings aoetype 1") -- cleave
     end
     yield("/wait 1")
+
+    if not bossModAIActive and useBMR then
+        yield("/bmrai on")
+        yield("/bmrai followtarget on")
+        yield("/bmrai followcombat on")
+        yield("/bmrai followoutofcombat on")
+
+        local ClassJob = GetClassJobId()
+        local MaxDistance = MeleeDist --default to melee distance
+        --ranged and casters have a further max distance so not always running all way up to target
+        if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
+            ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
+            ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
+            ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
+            ClassJob == 31 or -- Machinist
+            ClassJob == 33 or -- Astrologian
+            ClassJob == 35 or -- Red Mage
+            ClassJob == 38 or -- Dancer
+            ClassJob == 40 or -- Sage
+            ClassJob == 42 -- Pictomancer
+        then
+            MaxDistance = RangedDist
+        end
+        yield("/bmrai maxdistancetarget " .. MaxDistance)
+        bossModAIActive = true
+    end
+    yield("/wait 1")
+end
+
+function TurnOffCombatMods()
+    -- no need to turn RSR off
+
+    -- turn of BMR so you don't start engaging other mobs
+    if useBMR and bossModAIActive then
+        yield("/bmrai off")
+        yield("/bmrai followtarget off")
+        yield("/bmrai followcombat off")
+        yield("/bmrai followoutofcombat off")
+        bossModAIActive = false
+    end
 end
 
 function antistuck()
@@ -948,8 +1255,23 @@ function antistuck()
     PYY = GetPlayerRawYPos()
     PZZ = GetPlayerRawZPos()
 
+    local ClassJob = GetClassJobId()
+    local AntiStuckDist = MeleeDist-- default to melee distance
+    if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
+       ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
+       ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
+       ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
+       ClassJob == 31 or -- Machinist
+       ClassJob == 33 or -- Astrologian
+       ClassJob == 35 or -- Red Mage
+       ClassJob == 38 or -- Dancer
+       ClassJob == 40 or -- Sage
+       ClassJob == 42 then -- Pictomancer
+        AntiStuckDist = RangedDist -- max distance for ranged to attack is 25.5
+    end
+
     if PX == PXX and PY == PYY and PZ == PZZ then
-        while GetDistanceToTarget() > 3.5 and stuck < 20 do
+        while GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
             LogInfo("[FATE] Looping antistuck")
             local enemy_x = GetTargetRawXPos()
             local enemy_y = GetTargetRawYPos()
@@ -1053,7 +1375,7 @@ LastTeleportTimeStamp = 0
 --Start of the Loop
 
 LogInfo("[FATE] Starting fate farming script.")
-TurnOnRSR()
+TurnOnCombatMods()
 
 while true do
     LogInfo("[FATE] Starting new iteration.")
@@ -1104,8 +1426,13 @@ while true do
         CurrentFate = SelectNextFate()
     end
     while CurrentFate == nil do
-        LogInfo("[FATE] Changing instances.")
-        ChangeInstance()
+        if EnableChangeInstance and GetZoneInstance() > 0 then
+            LogInfo("[FATE] Changing instances.")
+            ChangeInstance()
+        else
+            yield("/wait 10")
+        end
+        CurrentFate = SelectNextFate()
     end
     
     --Announcement for gems
@@ -1187,7 +1514,7 @@ while true do
         end
     end
 
-    TurnOnRSR()
+    TurnOnCombatMods()
     yield("/wait 3")
 
     -------------------------------Engage Fate Combat--------------------------------------------
@@ -1203,16 +1530,7 @@ while true do
         end
 
         --Activates Bossmod upon landing in a fate
-        if not GetCharacterCondition(CharacterCondition.mounted) and not bossModAIActive then 
-            if useBMR then
-                yield("/bmrai on")
-                yield("/bmrai followtarget on")
-                yield("/bmrai followcombat on")
-                yield("/bmrai followoutofcombat on")
-                bossModAIActive = true
-                yield("/wait 3")
-            end
-        end
+        TurnOnCombatMods()
 
         --Paths to enemys when Bossmod is disabled
         if not useBMR then 
@@ -1234,14 +1552,8 @@ while true do
     end
 
     --Disables bossmod when the fate is over
-    if not IsInFate() and bossModAIActive then 
-        if useBMR then
-            yield("/bmrai off")
-            yield("/bmrai followtarget off")
-            yield("/bmrai followcombat off")
-            yield("/bmrai followoutofcombat off")
-            bossModAIActive = false
-        end
+    if not IsInFate() then
+        TurnOffCombatMods()
     end
     yield("/echo [FATE] No longer in fate.")
 
@@ -1324,7 +1636,7 @@ while true do
     end
 
     --Retainer Process
-    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) then 
+    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) then
         LogInfo("[FATE] Handling retainers...")
         if ARRetainersWaitingToBeProcessed() == true then
             while not IsInZone(129) do
