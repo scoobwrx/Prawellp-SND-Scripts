@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.0.10  *
+  *  1.0.11  *
   ***********
-    -> 1.0.10   Reduced aoetype spam and fixed aetheryte coords for Kozama'uka
+    -> 1.0.11   Reduced aoetype spam and fixed aetheryte coords for Kozama'uka
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -126,7 +126,7 @@ Food = ""                  --Leave "" Blank if you don't want to use any food
 
 --Retainer
 Retainers = true          --should it do Retainers
-TurnIn = false             --should it to Turn ins at the GC
+TurnIn = false             --should it to Turn ins at the GC (requires Deliveroo)
 slots = 5                  --how much inventory space before turning in
 
 --Other stuff
@@ -695,6 +695,50 @@ FatesData = {
     }
 }
 
+--Required Plugin Warning
+if not HasPlugin("vnavmesh") then
+    yield("/echo [FATE] Please Install vnavmesh")
+end
+if not HasPlugin("RotationSolverReborn") and not HasPlugin("RotationSolver") then
+    yield("/echo [FATE] Please Install Rotation Solver Reborn")
+end
+if not HasPlugin("PandorasBox") then
+    yield("/echo [FATE] Please Install Pandora's Box")
+end
+if not HasPlugin("TextAdvance") then
+    yield("/echo [FATE] Please Install TextAdvance")
+end
+if not HasPlugin("ChatCoordinates") then
+    yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
+end
+
+--Optional Plugin Warning
+if EnableChangeInstance == true  then
+    if HasPlugin("Lifestream") == false then
+        yield("/echo [FATE] Please Install Lifestream or Disable ChangeInstance in the settings")
+    end
+end
+if Retainers then
+    if not HasPlugin("AutoRetainer") then
+        yield("/echo [FATE] Please Install AutoRetainer")
+    end
+    if TurnIn then
+        if not HasPlugin("Deliveroo") then
+            yield("/echo [FATE] Please Install Deliveroo")
+        end
+    end
+end
+if ExtractMateria == true then
+    if HasPlugin("YesAlready") == false then
+        yield("/echo [FATE] Please Install YesAlready")
+    end 
+end   
+if useBMR == true then
+    if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
+        yield("/echo [FATE] Please Install BossMod Reborn")
+    end
+end
+
 --Chocobo settings
 if ChocoboS == true then
     PandoraSetFeatureState("Auto-Summon Chocobo", true) 
@@ -731,44 +775,6 @@ setSNDProperty("StopMacroIfItemNotFound", false)
 setSNDProperty("StopMacroIfAddonNotFound", false)
 setSNDProperty("StopMacroIfAddonNotVisible", false)
 
---Required Plugin Warning
-if not HasPlugin("vnavmesh") then
-    yield("/echo [FATE] Please Install vnavmesh")
-end
-if not HasPlugin("RotationSolverReborn") and not HasPlugin("RotationSolver") then
-    yield("/echo [FATE] Please Install Rotation Solver Reborn")
-end
-if not HasPlugin("PandorasBox") then
-    yield("/echo [FATE] Please Install Pandora's Box")
-end
-if not HasPlugin("TextAdvance") then
-    yield("/echo [FATE] Please Install TextAdvance")
-end
-if not HasPlugin("ChatCoordinates") then
-    yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
-end
-
---Optional Plugin Warning
-if EnableChangeInstance == true  then
-    if HasPlugin("Lifestream") == false then
-        yield("/echo [FATE] Please Install Lifestream or Disable ChangeInstance in the settings")
-    end
-end
-if Retainers == true then
-    if HasPlugin("AutoRetainer") == false then
-        yield("/echo [FATE] Please Install AutoRetainer")
-    end
-end
-if ExtractMateria == true then
-    if HasPlugin("YesAlready") == false then
-        yield("/echo [FATE] Please Install YesAlready")
-    end 
-end   
-if useBMR == true then
-    if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
-        yield("/echo [FATE] Please Install BossMod Reborn")
-    end
-end 
 ------------------------------Functions----------------------------------------------
 
 function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
@@ -1731,19 +1737,21 @@ while true do
             end
 
             --Deliveroo
-            -- if GetInventoryFreeSlotCount() < slots and TurnIn == true then
-            --     yield("/li gc")
-            -- end
-            -- while DeliverooIsTurnInRunning() == false do
-            --     yield("/wait 1")
-            --     yield("/deliveroo enable")
-            -- end
-            -- if DeliverooIsTurnInRunning() then
-            --     yield("/vnavmesh stop")
-            -- end
-            -- while DeliverooIsTurnInRunning() do
-            --     yield("/wait 1")
-            -- end
+            if TurnIn and HasPlugin("Deliveroo") then
+                if GetInventoryFreeSlotCount() < slots and TurnIn == true then
+                    yield("/li gc")
+                end
+                while DeliverooIsTurnInRunning() == false do
+                    yield("/wait 1")
+                    yield("/deliveroo enable")
+                end
+                if DeliverooIsTurnInRunning() then
+                    yield("/vnavmesh stop")
+                end
+                while DeliverooIsTurnInRunning() do
+                    yield("/wait 1")
+                end
+            end
         end
     end
 
