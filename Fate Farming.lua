@@ -533,7 +533,9 @@ FatesData = {
             collectionsFates= {
                 "So Sorry, Sokles",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName="Grand Designs: Unknown Execution", npcName="Meletos the Inscrutable" }
+            },
             bossFates= {
                 "Grand Designs: Io",
                 "The Rustling of Murderous Leaves",
@@ -1352,7 +1354,7 @@ function PurchaseBicolorVouchers(bicolorGemCount)
             end
         end
         
-        while not HasTarget() or GetTargetName() ~= npcName or (GetTargetName() == npcName and GetDistanceToTarget() > 10) do
+        while not HasTarget() or GetTargetName() ~= npcName or (GetTargetName() == npcName and GetDistanceToTarget() > 5) do
             yield("/target "..npcName)
             yield("/wait 1")
         end
