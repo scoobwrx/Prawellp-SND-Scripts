@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.0.8  *
+  *  1.0.9  *
   ***********
-    -> 1.0.8    Added partial support for other areas
+    -> 1.0.9    Reworked bicolor gemstone purchasing
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -98,9 +98,9 @@ This Plugins are Optional and not needed unless you have it enabled in the setti
 --false = no
 
 --Teleport and Voucher
-EnableChangeInstance = true      --should it Change Instance when there is no Fate (only works on DT fates)
-Exchange = false           --should it Exchange Vouchers
-OldV = false               --should it Exchange Old Vouchers
+EnableChangeInstance = true --should it Change Instance when there is no Fate (only works on DT fates)
+ShouldExchange = true             --should it Exchange Vouchers
+OldV = true                 --should it Exchange Old Vouchers
 
 --Fate settings
 WaitIfBonusBuff = true          --Don't change instances if you have the Twist of Fate bonus buff
@@ -125,13 +125,12 @@ Food = ""                  --Leave "" Blank if you don't want to use any food
                            --if its HQ include <hq> next to the name "Baked Eggplant <hq>"
 
 --Retainer
-Retainers = false          --should it do Retainers
+Retainers = true          --should it do Retainers
 TurnIn = false             --should it to Turn ins at the GC
 slots = 5                  --how much inventory space before turning in
 
 --Other stuff
 ChocoboS = true            --should it Activate the Chocobo settings in Pandora (to summon it)
-Announce = 2
 
 UsePandoraSync = true
 --Change this value for how much echos u want in chat 
@@ -810,16 +809,24 @@ function TeleportTo(aetheryteName)
         LogInfo("[FATE] Teleporting...")
         yield("/wait 1")
     end
+    yield("/wait 3")
     LastTeleportTimeStamp = EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp())
 end
 
 function HandleUnexpectedCombat()
-    TurnOnCombatMods()
-    while GetCharacterCondition(CharacterCondition.inCombat)do
+    if GetCharacterCondition(CharacterCondition.inCombat) then
+        TurnOnCombatMods()
+    end
+    
+    while GetCharacterCondition(CharacterCondition.inCombat) do
         if not HasTarget() or GetTargetHP() <= 0 then
             yield("/battletarget")
         end
         yield("/wait 1")
+    end
+
+    if not GetCharacterCondition(CharacterCondition.inCombat) then
+        TurnOffCombatMods()
     end
 end
 
@@ -1006,9 +1013,7 @@ function MoveToFate(nextFate)
         SetMapFlag(SelectedZone.zoneId, nextFate.x, nextFate.y, nextFate.z)
     end
 
-    while GetCharacterCondition(CharacterCondition.inCombat) do
-        yield("/wait 1")
-    end
+    HandleUnexpectedCombat()
 
     local playerPosition = {
         x = GetPlayerRawXPos(),
@@ -1117,7 +1122,6 @@ function EnemyPathing()
     end
 end
 
-CurrentInstance = 0
 --When there is no Fate 
 function ChangeInstance()
     --Change Instance
@@ -1163,15 +1167,17 @@ function ChangeInstance()
         end
         yield("/automove off")
 
-        yield("/li "..CurrentInstance+1) -- start instance transfer
+        local nextInstance = (GetZoneInstance() % 3) + 1
+
+        yield("/li "..nextInstance) -- start instance transfer
         yield("/wait 1") -- wait for instance transfer to register
-        CurrentInstance = (CurrentInstance + 1) % 3
         while GetCharacterCondition(CharacterCondition.transition) do -- wait for instance transfer to complete
             LogInfo("[FATE] Waiting for instance transfer to complete...")
             yield("/wait 1")
         end
         yield("/lockon off")
     end
+    yield("/wait 3")
 end
 
 function AvoidEnemiesWhileFlying()
@@ -1325,6 +1331,53 @@ function HandleDeath()
     end
 end
 
+function PurchaseBicolorVouchers(bicolorGemCount)
+    local npcName = ""
+    if ShouldExchange and bicolorGemCount >= 1400 then
+        if not PathIsRunning() or not PathfindInProgress() then
+            if OldV then
+                TeleportTo("Old Sharlayan")
+                PathfindAndMoveTo(74.17, 5.15, -37.44)
+                npcName = "Gadfrid"
+            else
+                TeleportTo("Solution Nine")
+                yield("/wait 1")
+                yield("/li Nexus Arcade")
+                yield("/wait 5") -- lifestream takes a second to initiate
+                while GetCharacterCondition(CharacterCondition.transition) or GetCharacterCondition(CharacterCondition.occupied32) do
+                    yield("/wait 1")
+                end
+                PathfindAndMoveTo(-198.466, 0.922, -6.955)
+                npcName = "Beryl"
+            end
+        end
+        
+        while not HasTarget() or GetTargetName() ~= npcName or (GetTargetName() == npcName and GetDistanceToTarget() > 10) do
+            yield("/target "..npcName)
+            yield("/wait 1")
+        end
+        yield("/vnav stop")
+        yield("/interact")
+        yield("/wait 1")
+        while not IsAddonVisible("ShopExchangeCurrency") do
+            yield("/click Talk Click") -- in case you don't have TextAdvanced installed
+            yield("/wait 1")
+        end
+        yield("/callback ShopExchangeCurrency false 0 5 "..(bicolorGemCount//100)) --Change the last number to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
+        while not IsAddonVisible("SelectYesno") do
+            yield("/wait 1")
+        end
+        yield("/callback SelectYesno true 0")
+        while IsAddonVisible("SelectYesno") do
+            yield("/wait 1")
+        end
+        while GetCharacterCondition(CharacterCondition.occupied32) do
+            yield("/callback ShopExchangeCurrency true -1")
+            yield("/wait 1")
+        end
+    end
+end
+
 ---------------------------Beginning of the Code------------------------------------
 
 --vnavmesh building
@@ -1343,8 +1396,7 @@ if HasPlugin("TextAdvance") then
     yield("/at y")
 end
 
-GemAnnouncementCount = 0
-cCount = 0
+GemAnnouncementLock = false
 AvailableFateCount = 0
 FoodCheck = 0
 
@@ -1375,7 +1427,6 @@ LastTeleportTimeStamp = 0
 --Start of the Loop
 
 LogInfo("[FATE] Starting fate farming script.")
-TurnOnCombatMods()
 
 while true do
     LogInfo("[FATE] Starting new iteration.")
@@ -1384,8 +1435,6 @@ while true do
         yield("/echo [FATE] Teleporting to "..teleport.." and resuming FATE farm.")
         TeleportTo(teleport)
     end
-
-    gems = GetItemCount(26807)
 
     --food usage
     if not (GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition)) then
@@ -1407,12 +1456,7 @@ while true do
         end
     end
 
-    ---------------------------Notification tab--------------------------------------
-    if gems > 1400 and cCount == 0 then
-        yield("/echo [FATE] You are almost capped with ur Bicolor Gems! <se.3>")
-        yield("/wait 1")
-        cCount = cCount +1
-    end
+    
     ---------------------------Select and Move to Fate--------------------------------------
 
     CurrentFate = SelectNextFate() -- init first fate object
@@ -1435,12 +1479,6 @@ while true do
         CurrentFate = SelectNextFate()
     end
     
-    --Announcement for gems
-    if GemAnnouncementCount == 0  and CurrentFate.fateId ~= 0 and Announce == 1 or Announce == 2 then
-        LogInfo("[FATE] Gems: "..gems)
-        yield("/wait 0.5")
-        GemAnnouncementCount = GemAnnouncementCount +1
-    end
     MoveToFate(CurrentFate)
 
     HandleDeath()
@@ -1514,14 +1552,12 @@ while true do
         end
     end
 
-    TurnOnCombatMods()
-    yield("/wait 3")
-
     -------------------------------Engage Fate Combat--------------------------------------------
     bossModAIActive = false
 
     while IsInFate() do
-        CurrentInstance = 0
+        GemAnnouncementLock = false
+    
         yield("/vnavmesh stop")
         yield("/wait 1")
         while GetCharacterCondition(CharacterCondition.mounted) do
@@ -1539,8 +1575,7 @@ while true do
         yield("/vnavmesh stop")
         yield("/wait 1")
         AvailableFateCount = 0
-        GemAnnouncementCount = 0
-        cCount = 0
+        
         antistuck()
         if GetCharacterCondition(CharacterCondition.dead) then
             HandleDeath()
@@ -1687,126 +1722,40 @@ while true do
             yield("/wait 1")
             yield("/callback RetainerList true -1")
             yield("/wait 1")
-            while IsInZone(129) do
-                if IsAddonVisible("RetainerList") then
-                    yield("/callback RetainerList true -1")
-                    yield("/wait 1")
-                end
-
-                --Deliveroo
-                if GetInventoryFreeSlotCount() < slots and TurnIn == true then
-                    yield("/li gc")
-                end
-                while DeliverooIsTurnInRunning() == false do
-                    yield("/wait 1")
-                    yield("/deliveroo enable")
-                end
-                if DeliverooIsTurnInRunning() then
-                    yield("/vnavmesh stop")
-                end
-                while DeliverooIsTurnInRunning() do
-                    yield("/wait 1")
-                end
+            if IsAddonVisible("RetainerList") then
+                yield("/callback RetainerList true -1")
+                yield("/wait 1")
             end
+
+            --Deliveroo
+            -- if GetInventoryFreeSlotCount() < slots and TurnIn == true then
+            --     yield("/li gc")
+            -- end
+            -- while DeliverooIsTurnInRunning() == false do
+            --     yield("/wait 1")
+            --     yield("/deliveroo enable")
+            -- end
+            -- if DeliverooIsTurnInRunning() then
+            --     yield("/vnavmesh stop")
+            -- end
+            -- while DeliverooIsTurnInRunning() do
+            --     yield("/wait 1")
+            -- end
         end
     end
 
 
-    ------------------------------Vouchers-----------------------------------------------
-    --old Vouchers!
-    if gems > 1400 and Exchange == true and OldV == true then
-        LogInfo("[FATE] Exchanging for old vouchers.")
-        TeleportTo("Old Sharlayan")
-        yield("/wait 7")
-        while GetCharacterCondition(CharacterCondition.transition) == true do
-            yield("/wait 0.5")
-        end
-        if IsInZone(962) then
-            while PathIsRunning() == false or PathfindInProgress() == false do
-                PathfindAndMoveTo(72.497, 5.1499, -33.533)
-            end
-            yield("/wait 2")
-            while GetCharacterCondition(31) == false do
-                yield("/target Gadfrid")
-                yield("/wait 1")
-                yield("/interact")
-                yield("/click Talk Click") 
-                yield("/wait 1")
-            end
-            if GetCharacterCondition(31) == true then
-                yield("/callback ShopExchangeCurrency false 0 5 "..(gems//100)) --Change the last number to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
-                yield("/wait 1")
-                while IsAddonVisible("ShopExchangeCurrency") do
-                    yield("/callback ShopExchangeCurrency true -1")
-                    yield("/wait 1")
-                end
-            end
+    ---------------------------Notification tab--------------------------------------
+    local bicolorGemCount = GetItemCount(26807)
+    if not GemAnnouncementLock then
+        GemAnnouncementLock = true
+        if bicolorGemCount > 1400 then
+            GemAnnouncementLock = true -- prevents spamming multiple times between fates
+            yield("/echo [FATE] You're almost capped with "..tostring(bicolorGemCount).."/1500 gems! <se.3>")
+            yield("/wait 1")
+        else
+            yield("/echo Gems: "..tostring(bicolorGemCount).."/1500")
         end
     end
-
-    --new Vouchers!
-    if gems > 1400 and Exchange == true and OldV == false then
-        LogInfo("[FATE] Exchanging for new vouchers.")
-        while not IsInZone(1186) do
-            TeleportTo("Solution Nine")
-            yield("/wait 7")
-                
-            while GetCharacterCondition(CharacterCondition.transition) == true do
-                yield("/wait 0.5")
-            end
-        end
-        if IsInZone(1186) then
-
-            while IsPlayerAvailable() == false or NavIsReady() == false do
-                yield("/wait 1")
-            end
-
-            while GetCharacterCondition(CharacterCondition.transition) == false do
-                yield("/li Nexus Arcade")
-                yield("/wait 2")
-            end
-
-            while GetCharacterCondition(CharacterCondition.transition) == true or GetCharacterCondition(32) == true do
-                yield("/wait 1")
-            end
-
-            if IsPlayerAvailable() == true and GetCharacterCondition(CharacterCondition.transition) == false or GetCharacterCondition(32) == false then
-                yield("/wait 1")
-                PathfindAndMoveTo(-198.466, 0.922, -6.955) --NPC
-                yield("/wait 1")
-            end
-
-            while PathIsRunning() == true or PathfindInProgress() == true do
-                yield("/wait 1")
-                while GetDistanceToPoint(-198.466, 0.922, -6.955) > 10 and GetDistanceToPoint(-198.466, 0.922, -6.955) < 15 do
-                    PathfindAndMoveTo(-198.466, 0.922, -6.955)
-                    yield("/echo [FATE] Repathing")
-                    yield("/wait 1")
-                end
-            end
-
-            if IsInZone(1186) and PathIsRunning() == false or PathfindInProgress() == false then
-                yield("/target Beryl")
-                yield("/wait 0.5")
-            
-                while IsInZone(1186) and not IsAddonVisible("ShopExchangeCurrency") do
-                    yield("/interact")
-                    yield("/wait 0.5")
-                    yield("/click Talk Click")
-                    yield("/wait 1")
-                end
-
-                if IsInZone(1186) and GetCharacterCondition(31) == true and IsAddonVisible("ShopExchangeCurrency") then
-                    yield("/callback ShopExchangeCurrency false 0 5 "..(gems//100)) --Change the last number to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
-                    yield("/wait 1")
-                    -- yield("/callback SelectYesno true 0") -- textadvanced might take care of this
-                    -- yield("/wait 0.5")
-                    while IsAddonVisible("ShopExchangeCurrency") do
-                        yield("/callback ShopExchangeCurrency true -1")
-                        yield("/wait 1")
-                    end
-                end
-            end
-        end
-    end
+    PurchaseBicolorVouchers(bicolorGemCount)
 end
