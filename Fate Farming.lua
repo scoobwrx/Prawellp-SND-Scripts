@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.0.9  *
+  *  1.0.10  *
   ***********
-    -> 1.0.9    Reworked bicolor gemstone purchasing
+    -> 1.0.10   Reduced aoetype spam and fixed aetheryte coords for Kozama'uka
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -576,8 +576,8 @@ FatesData = {
         zoneId=1188,
         aetheryteList={
             { aetheryteName="Ok'hanu", x=-170, y=6, z=-470 },
-            { aetheryteName="Many Fires", x=465, y=115, z=635 },
-            { aetheryteName="Earthenshire", x=545, y=115, z=200 }
+            { aetheryteName="Many Fires", x=541, y=117, z=203 },
+            { aetheryteName="Earthenshire", x=-477, y=124, z=311 }
         },
         fatesList={
             collectionsFates={
@@ -1557,6 +1557,10 @@ while true do
     -------------------------------Engage Fate Combat--------------------------------------------
     bossModAIActive = false
 
+    if IsInFate() then
+        --Activates Bossmod upon landing in a fate
+        TurnOnCombatMods()
+    end
     while IsInFate() do
         GemAnnouncementLock = false
     
@@ -1566,9 +1570,6 @@ while true do
             yield("/gaction dismount")
             yield("/wait 1")
         end
-
-        --Activates Bossmod upon landing in a fate
-        TurnOnCombatMods()
 
         --Paths to enemys when Bossmod is disabled
         if not useBMR then 
