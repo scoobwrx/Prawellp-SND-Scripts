@@ -10,6 +10,7 @@
   * Version *
   *  1.1.0  *
   ***********
+    -> 1.1.2    Added check for (0,y,0) fates, commented out problematic fates
     -> 1.1.1    Merged mount functions by CurlyWorm
     -> 1.1.0    Removed dependency on TextAdvance
     -> 1.0.8    Merged changes for ShB areas and better antistuck by scoobwrx
@@ -840,6 +841,50 @@ function EorzeaTimeToUnixTime(eorzeaTime)
     return eorzeaTime/(144/7) -- 24h Eorzea Time equals 70min IRL
 end
 
+function GetFateNpcName(fateName)
+    for i, fate in ipairs(SelectedZone.fatesList.otherNpcFates) do
+        if fate.fateName == fateName then
+            return fate.npcName
+        end
+    end
+end
+
+function IsCollectionsFate(fateName)
+    for i, collectionsFate in ipairs(SelectedZone.fatesList.collectionsFates) do
+        if collectionsFate == fateName then
+            return true
+        end
+    end
+    return false
+end
+
+function IsBossFate(fateName)
+    for i, bossFate in ipairs(SelectedZone.fatesList.bossFates) do
+        if bossFate == fateName then
+            return true
+        end
+    end
+    return false
+end
+
+function IsOtherNpcFate(fateName)
+    for i, otherNpcFate in ipairs(SelectedZone.fatesList.otherNpcFates) do
+        if otherNpcFate.fateName == fateName then
+            return true
+        end
+    end
+    return false
+end
+
+function IsBlacklistedFate(fateName)
+    for i, blacklistedFate in ipairs(SelectedZone.fatesList.blacklistedFates) do
+        if blacklistedFate == fateName then
+            return true
+        end
+    end
+    return false
+end
+
 --[[
     Given two fates, picks the better one based on priority progress -> is bonus -> time left -> distance
 ]]
@@ -898,50 +943,6 @@ function SelectNextFateHelper(tempFate, nextFate)
     return nextFate
 end
 
-function GetFateNpcName(fateName)
-    for i, fate in ipairs(SelectedZone.fatesList.otherNpcFates) do
-        if fate.fateName == fateName then
-            return fate.npcName
-        end
-    end
-end
-
-function IsCollectionsFate(fateName)
-    for i, collectionsFate in ipairs(SelectedZone.fatesList.collectionsFates) do
-        if collectionsFate == fateName then
-            return true
-        end
-    end
-    return false
-end
-
-function IsBossFate(fateName)
-    for i, bossFate in ipairs(SelectedZone.fatesList.bossFates) do
-        if bossFate == fateName then
-            return true
-        end
-    end
-    return false
-end
-
-function IsOtherNpcFate(fateName)
-    for i, otherNpcFate in ipairs(SelectedZone.fatesList.otherNpcFates) do
-        if otherNpcFate.fateName == fateName then
-            return true
-        end
-    end
-    return false
-end
-
-function IsBlacklistedFate(fateName)
-    for i, blacklistedFate in ipairs(SelectedZone.fatesList.blacklistedFates) do
-        if blacklistedFate == fateName then
-            return true
-        end
-    end
-    return false
-end
-
 --Gets the Location of the next Fate. Prioritizes anything with progress above 0, then by shortest time left
 function SelectNextFate()
     local fates = GetActiveFates()
@@ -971,30 +972,31 @@ function SelectNextFate()
         end
         LogInfo("[FATE] Time left on fate #:"..tempFate.fateId..": "..math.floor(tempFate.timeLeft//60).."min, "..math.floor(tempFate.timeLeft%60).."s")
         
-        
-        if IsCollectionsFate(tempFate.fateName) then -- skip collections fates
-            LogInfo("[FATE] Skipping fate #"..tempFate.fateId.." "..tempFate.fateName.." due to being collections fate.")
-        elseif not IsBlacklistedFate(tempFate.fateName) then -- check fate is not blacklisted for any reason
-            if IsOtherNpcFate(tempFate.fateName) then
-                if tempFate.startTime > 0 then -- if someone already opened this fate, then treat is as all the other fates
-                    nextFate = SelectNextFateHelper(tempFate, nextFate)
-                else -- no one has opened this fate yet
-                    if nextFate == nil then -- pick this if there's nothing else
-                        nextFate = tempFate
-                    elseif tempFate.isBonusFate then
+        if tempFate.x == 0 and tempFate.z == 0 then -- sometimes game doesn't send the correct coords
+            if IsCollectionsFate(tempFate.fateName) then -- skip collections fates
+                LogInfo("[FATE] Skipping fate #"..tempFate.fateId.." "..tempFate.fateName.." due to being collections fate.")
+            elseif not IsBlacklistedFate(tempFate.fateName) then -- check fate is not blacklisted for any reason
+                if IsOtherNpcFate(tempFate.fateName) then
+                    if tempFate.startTime > 0 then -- if someone already opened this fate, then treat is as all the other fates
                         nextFate = SelectNextFateHelper(tempFate, nextFate)
-                    elseif nextFate.startTime == 0 then -- both fates are unopened npc fates
+                    else -- no one has opened this fate yet
+                        if nextFate == nil then -- pick this if there's nothing else
+                            nextFate = tempFate
+                        elseif tempFate.isBonusFate then
+                            nextFate = SelectNextFateHelper(tempFate, nextFate)
+                        elseif nextFate.startTime == 0 then -- both fates are unopened npc fates
+                            nextFate = SelectNextFateHelper(tempFate, nextFate)
+                        end
+                    end
+                elseif IsBossFate(tempFate.fateName) then
+                    if JoinBossFatesIfActive and tempFate.progress >= CompletionToJoinBossFate then
                         nextFate = SelectNextFateHelper(tempFate, nextFate)
                     end
-                end
-            elseif IsBossFate(tempFate.fateName) then
-                if JoinBossFatesIfActive and tempFate.progress >= CompletionToJoinBossFate then
+                elseif tempFate.duration ~= 0 then -- else is normal fate. avoid unlisted talk to npc fates
                     nextFate = SelectNextFateHelper(tempFate, nextFate)
                 end
-            elseif tempFate.duration ~= 0 then -- else is normal fate. avoid unlisted talk to npc fates
-                nextFate = SelectNextFateHelper(tempFate, nextFate)
+                LogInfo("[FATE] Finished considering fate #"..tempFate.fateId.." "..tempFate.fateName)
             end
-            LogInfo("[FATE] Finished considering fate #"..tempFate.fateId.." "..tempFate.fateName)
         end
     end
 
