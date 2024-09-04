@@ -129,8 +129,8 @@ TurnIn = false             --should it to Turn ins at the GC (requires Deliveroo
 slots = 5                  --how much inventory space before turning in
 
 --Other stuff
-ChocoboS = true            --should it Activate the Chocobo settings in Pandora (to summon it)
-MountToUse = ""            --The mount you'd like to use when flying between fates, leave empty for mount roulette 
+ChocoboS = true                 --should it Activate the Chocobo settings in Pandora (to summon it)
+MountToUse = "mount roulette"   --The mount you'd like to use when flying between fates, leave empty for mount roulette 
 
 UsePandoraSync = true
 --Change this value for how much echos u want in chat 
@@ -818,22 +818,21 @@ function TeleportTo(aetheryteName)
     LastTeleportTimeStamp = EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp())
 end
 
-function Mount(mountName)
-    local mountName = mountName or MountToUse
+function Mount()
     local max_retries = 10     -- Maximum number of retries
     local retry_interval = 1.0 -- Time interval between retries in seconds
     local retries = 0          -- Counter for the number of retries
     if GetCharacterCondition(CharacterCondition.mounted) then
         return
     end
-    repeat
-        yield("/wait 0.1")
-    until IsPlayerAvailable() and not IsPlayerCasting() and not GetCharacterCondition(CharacterCondition.inCombat)
+
+    HandleUnexpectedCombat()
+    
     while retries < max_retries do
-        if mountName == nil then
+        if MountToUse == "mount roulette" then
             yield('/gaction "mount roulette"')
         else
-            yield('/mount "' .. mountName .. '"')
+            yield('/mount "' .. MountToUse .. '"')
         end
         yield("/wait " .. retry_interval)
         if GetCharacterCondition(CharacterCondition.mounted) then
