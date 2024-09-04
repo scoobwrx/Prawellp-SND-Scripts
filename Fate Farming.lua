@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.0  *
+  *  1.1.3  *
   ***********
-    -> 1.1.2    Added check for (0,y,0) fates, commented out problematic fates
+    -> 1.1.3    Reverteed check for (0,y,0) fates, there was a bug
     -> 1.1.1    Merged mount functions by CurlyWorm
     -> 1.1.0    Removed dependency on TextAdvance
     -> 1.0.8    Merged changes for ShB areas and better antistuck by scoobwrx
@@ -972,7 +972,7 @@ function SelectNextFate()
         end
         LogInfo("[FATE] Time left on fate #:"..tempFate.fateId..": "..math.floor(tempFate.timeLeft//60).."min, "..math.floor(tempFate.timeLeft%60).."s")
         
-        if tempFate.x == 0 and tempFate.z == 0 then -- sometimes game doesn't send the correct coords
+        -- if tempFate.x == 0 and tempFate.z == 0 then -- sometimes game doesn't send the correct coords
             if IsCollectionsFate(tempFate.fateName) then -- skip collections fates
                 LogInfo("[FATE] Skipping fate #"..tempFate.fateId.." "..tempFate.fateName.." due to being collections fate.")
             elseif not IsBlacklistedFate(tempFate.fateName) then -- check fate is not blacklisted for any reason
@@ -997,14 +997,14 @@ function SelectNextFate()
                 end
                 LogInfo("[FATE] Finished considering fate #"..tempFate.fateId.." "..tempFate.fateName)
             end
-        end
+        -- end
     end
 
     LogInfo("[FATE] Finished considering all fates")
 
     if nextFate == nil then
-        LogInfo("[FATE] No available fates found.")
-        yield("/echo [FATE] No available fates found.")
+        LogInfo("[FATE] No eligible fates found.")
+        yield("/echo [FATE] No eligible fates found.")
     else
         LogInfo("[FATE] Final selected fate #"..nextFate.fateId.." "..nextFate.fateName)
     end
