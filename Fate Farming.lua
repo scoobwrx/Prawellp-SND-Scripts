@@ -801,8 +801,6 @@ function Mount()
     if GetCharacterCondition(CharacterCondition.mounted) then
         return
     end
-
-    HandleUnexpectedCombat()
     
     while retries < max_retries do
         if MountToUse == "mount roulette" then
@@ -1031,6 +1029,7 @@ function MoveToFate(nextFate)
     TeleportToClosestAetheryteToFate(playerPosition, nextFate)
 
     while not IsInFate() and not GetCharacterCondition(CharacterCondition.mounted) do
+        HandleUnexpectedCombat()
         Mount()
         if GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.flying) and HasFlightUnlocked(SelectedZone.zoneId) then
             yield("/gaction jump")
@@ -1065,9 +1064,7 @@ function InteractWithFateNpc(fate)
     while not IsInFate() do
         yield("/wait 1")
 
-        while not IsInFate() and GetCharacterCondition(CharacterCondition.inCombat) do
-            HandleUnexpectedCombat()
-        end
+        HandleUnexpectedCombat()
 
         while not HasTarget() and IsFateActive(fate.fateId) and not IsInFate() do -- break conditions in case someone snipes the interact before you
             yield("/echo [FATE] Cannot find NPC target")
