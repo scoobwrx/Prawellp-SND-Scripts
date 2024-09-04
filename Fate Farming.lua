@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.0.11  *
+  *  1.1.0  *
   ***********
-    -> 1.0.11   Reduced aoetype spam and fixed aetheryte coords for Kozama'uka
+    -> 1.1.0    Removed dependency on TextAdvance
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -70,7 +70,6 @@ Plugins that are needed for it to work:
     -> RotationSolver Reborn :  (for Attacking enemys)  https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json       
         -> Target -> activate "Select only Fate targets in Fate" and "Target Fate priority"
         -> Target -> "Engage settings" set to "Previously engaged targets (enagegd on countdown timer)"
-    -> TextAdvance : (for talking to the NPCs) https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json
 
 *********************
 *  Optional Plugins *
@@ -705,9 +704,6 @@ end
 if not HasPlugin("PandorasBox") then
     yield("/echo [FATE] Please Install Pandora's Box")
 end
-if not HasPlugin("TextAdvance") then
-    yield("/echo [FATE] Please Install TextAdvance")
-end
 if not HasPlugin("ChatCoordinates") then
     yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
 end
@@ -1095,8 +1091,12 @@ function InteractWithFateNpc(fate)
             yield("/interact")
             yield("/wait 1")
         end
-        if IsAddonVisible("SelectYesno") then
-            yield("/callback SelectYesno true 0")
+        while GetCharacterCondition(32) do
+            if IsAddonVisible("Talk") then
+                yield("/click Talk Click")
+            elseif IsAddonVisible("SelectYesno") then
+                yield("/callback SelectYesno true 0")
+            end
             yield("/wait 0.1")
         end
         -- wait until npc interaction is finished, then unselect the npc
@@ -1368,7 +1368,7 @@ function PurchaseBicolorVouchers(bicolorGemCount)
         yield("/interact")
         yield("/wait 1")
         while not IsAddonVisible("ShopExchangeCurrency") do
-            yield("/click Talk Click") -- in case you don't have TextAdvanced installed
+            yield("/click Talk Click")
             yield("/wait 1")
         end
         yield("/callback ShopExchangeCurrency false 0 5 "..(bicolorGemCount//100)) --Change the last number to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
@@ -1397,11 +1397,6 @@ while not NavIsReady() do
 end
 if NavIsReady() then
     yield("/echo [FATE] Mesh is Ready!")
-end
-
--- turn on TextAdvance
-if HasPlugin("TextAdvance") then
-    yield("/at y")
 end
 
 GemAnnouncementLock = false
