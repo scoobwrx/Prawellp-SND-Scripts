@@ -10,7 +10,9 @@
   * Version *
   *  1.1.0  *
   ***********
+    -> 1.1.1    Merged mount functions by CurlyWorm
     -> 1.1.0    Removed dependency on TextAdvance
+    -> 1.0.8    Merged changes for ShB areas and better antistuck by scoobwrx
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -30,32 +32,6 @@
                     added 2 new settings for it in the Retainer settings
                 Plugin changes
                     added Deliveroo in Optional Plugins for turn ins
-    -> 0.2.3    Code changes
-                    forgot the rotation settings in the last update to change it based on your job when entering a fate (thanks Caladbol)
-                    Removed the numbers behind the wait because im to lazy to update them and check wich i need
-                    added antistuck
-    -> 0.2.2    Voucher exchange
-                    Removed the target, lockon and move to Aetheryte. causing problems since the new spawn points in S9
-                    Repaths if you get stuck at the counter
-                Rotation Solver
-                    turns auto on every time you enter a fate.
-                Build in "[FATE]" before every echo in chat
-    -> 0.2.1    Fixed game crash caused by checking for the Food status
-    -> 0.2.0    Code changes
-                    added auto snd property set (sets the snd settings so you don't have to)
-                    sets the rsr settings to auto (and aoetype 2) when your on Tank (DRK not included), and on other classes to manual (and aoetype 1) 
-                Plugin changes
-                    removed the need of simple tweaks (plugin)
-                    removed the need of yes already for the materia (plugin)
-                    some bossmod settings will now be automatically set so no need to manually check for them (Requires version 7.2.0.22)
-                        (Please make sure to change the Desired distance for Meeles manually tho)
-                Setting changes
-                    added fatewait for the amount it should wait before landing
-                    removed Manualrepair setting
-                    if RepairAmount is set to 0 it wont repair (to have less settings)
-                    Reordert the settings and named some categorys
-                    BMR will now be default set to true
-                    added food usage
 
 
 *********************
