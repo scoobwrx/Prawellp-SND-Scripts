@@ -532,11 +532,11 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {
                 { fateName= "Pasture Expiration Date", npcName= "Tsivli Stoutstrider" },
-                { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
-                { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
+                -- { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
+                -- { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
                 { fateName= "Birds Up", npcName= "Coffee Farmer" },
                 { fateName= "Salty Showdown", npcName= "Chirwagur Sabreur" },
-                { fateName= "Fire Suppression", npcName= "Tsivli Stoutstrider" },
+                -- { fateName= "Fire Suppression", npcName= "Tsivli Stoutstrider" },
                 { fateName= "Wolf Parade", npcName= "Pelupelu Peddler" },
             },
             bossFates= {
