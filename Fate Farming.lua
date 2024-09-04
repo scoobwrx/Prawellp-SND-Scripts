@@ -315,7 +315,9 @@ FatesData = {
                 "The Elderblade",
                 "The Odd Couple",
             },
-            blacklistedFates= {}
+            blacklistedFates= {
+                "Tolba No. 1", -- pathing is really bad to enemies
+            }
         }
     },
     {
@@ -330,7 +332,9 @@ FatesData = {
             collectionsFates= {
                 "Twice Upon a Time",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Once Upon a Time", npcName= "Nectar-seeking Pixie" },
+            },
             bossFates= {
                 "Thrice Upon a Time",
                 "Locus Terribilis",
@@ -356,7 +360,9 @@ FatesData = {
                 "Pluck of the Draw",
                 "Monkeying Around",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Queen of the Harpies", npcName= "Fanow Huntress" },
+            },
             bossFates= {
                 "Attack of the Killer Tomatl",
                 "I'll Be Bark",
@@ -465,7 +471,10 @@ FatesData = {
             collectionsFates= {
                 "What a Thrill",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Lepus Lamentorum: Dynamite Disaster", npcName= "Warringway" },
+                { fateName= "Lepus Lamentorum: Cleaner Catastrophe", npcName= "Fallingway" },
+            },
             bossFates= {
                 "The Stones of Silence",
                 "Lepus Lamentorum: Crazy Contraption",
@@ -488,11 +497,12 @@ FatesData = {
             collectionsFates= {
                 "Omicron Recall: Comms Expansion"
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Wings of Glory", npcName= "Ahl Ein's Kin" },
+            },
             bossFates= {
                 "Far from the Madding Horde",
                 "Nevermore",
-                "Wings of Glory",
                 "Omicron Recall: Killing Order",
             },
             blacklistedFates= {}
@@ -512,6 +522,8 @@ FatesData = {
             },
             otherNpcFates= {
                 { fateName="Grand Designs: Unknown Execution", npcName="Meletos the Inscrutable" }
+                { fateName= "Grand Designs: Aigokeros", npcName= "Meletos the Inscrutable" },
+                { fateName= "Nature's Staunch Protector", npcName= "Monoceros Monitor" },
             },
             bossFates= {
                 "Grand Designs: Io",
