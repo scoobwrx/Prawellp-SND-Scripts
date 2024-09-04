@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.0.7  *
+  *  1.1.0  *
   ***********
-    -> 1.0.7    Added partial support for other areas
+    -> 1.1.0    Removed dependency on TextAdvance
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -70,7 +70,6 @@ Plugins that are needed for it to work:
     -> RotationSolver Reborn :  (for Attacking enemys)  https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json       
         -> Target -> activate "Select only Fate targets in Fate" and "Target Fate priority"
         -> Target -> "Engage settings" set to "Previously engaged targets (enagegd on countdown timer)"
-    -> TextAdvance : (for talking to the NPCs) https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json
 
 *********************
 *  Optional Plugins *
@@ -98,9 +97,9 @@ This Plugins are Optional and not needed unless you have it enabled in the setti
 --false = no
 
 --Teleport and Voucher
-EnableChangeInstance = true      --should it Change Instance when there is no Fate (only works on DT fates)
-Exchange = false           --should it Exchange Vouchers
-OldV = false               --should it Exchange Old Vouchers
+EnableChangeInstance = true --should it Change Instance when there is no Fate (only works on DT fates)
+ShouldExchange = true             --should it Exchange Vouchers
+OldV = true                 --should it Exchange Old Vouchers
 
 --Fate settings
 WaitIfBonusBuff = true          --Don't change instances if you have the Twist of Fate bonus buff
@@ -111,6 +110,12 @@ CompletionToJoinBossFate = 20   --Percent above which to join boss fate
 fatewait = 0                    --the amount how long it should when before dismounting (0 = at the beginning of the fate 3-5 = should be in the middle of the fate)
 useBMR = true                   --if you want to use the BossMod dodge/follow mode
 
+--Ranged attacks and spells max distance to be usable is 25.49y, 25.5 is "target out of range"
+--Melee attacks (auto attacks) max distance is 2.59y, 2.60 is "target out of range"
+--ranged and casters have a further max distance so not always running all way up to target
+--users can adjust below settings to their liking
+MeleeDist = 2.5                 --distance for BMRAI melee
+RangedDist = 5                  --distance for BMRAI ranged
 
 --Utilities
 RepairAmount = 20          --the amount it needs to drop before Repairing (set it to 0 if you don't want it to repaier. onky supports self repair)
@@ -119,13 +124,12 @@ Food = ""                  --Leave "" Blank if you don't want to use any food
                            --if its HQ include <hq> next to the name "Baked Eggplant <hq>"
 
 --Retainer
-Retainers = false          --should it do Retainers
-TurnIn = false             --should it to Turn ins at the GC
+Retainers = true          --should it do Retainers
+TurnIn = false             --should it to Turn ins at the GC (requires Deliveroo)
 slots = 5                  --how much inventory space before turning in
 
 --Other stuff
 ChocoboS = true            --should it Activate the Chocobo settings in Pandora (to summon it)
-Announce = 2
 MountToUse = ""            --The mount you'd like to use when flying between fates, leave empty for mount roulette 
 
 UsePandoraSync = true
@@ -279,6 +283,269 @@ FatesData = {
         }
     },
     {
+        zoneName = "Lakeland",
+        zoneId = 813,
+        aetheryteList = {
+            { aetheryteName="The Ostall Imperative", x=-735, y=53, z=-230 },
+            { aetheryteName="Fort Jobb", x=753, y=24, z=-28 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Pick-up Sticks",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Calm a Chameleon",
+                "A Beast among Men",
+                "Draconian Measures",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Kholusia",
+        zoneId = 814,
+        aetheryteList = {
+            { aetheryteName="Stilltide", x=668, y=29, z=289 },
+            { aetheryteName="Wright", x=-244, y=20, z=385 },
+            { aetheryteName="Tomra", x=-426, y=419, z=-623 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Ironbeard Builders - Rebuilt",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Not Today (FATE)",
+                "A Finale Most Formidable",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Amh Araeng",
+        zoneId = 815,
+        aetheryteList = {
+            { aetheryteName="Mord Souq", x=246, y=12, z=-220 },
+            { aetheryteName="Twine", x=-511, y=47, z=-212 },
+            { aetheryteName="The Inn at Journey's Head", x=399, y=-24, z=307 },
+        },
+        fatesList= {
+            collectionsFates= {},
+            otherNpcFates= {},
+            bossFates= {
+                "Bayawak Attack",
+                "The Elderblade",
+                "The Odd Couple",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Il Mheg",
+        zoneId = 816,
+        aetheryteList = {
+            { aetheryteName="Lydha Lran", x=-344, y=48, z=512 },
+            { aetheryteName="Wolekdorf", x=380, y=87, z=-687 },
+            { aetheryteName="Pla Enni", x=-72, y=103, z=-857 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Twice Upon a Time",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Thrice Upon a Time",
+                "Locus Terribilis",
+                "Mad Magic",
+                "Brute Fuath",
+                "Breaking the Fuath Wall",
+                "Go Fuath a Conqueror",
+                "Fuath to Be Reckoned With",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "The Rak'tika Greatwood",
+        zoneId = 817,
+        aetheryteList = {
+            { aetheryteName="Slitherbough", x=-103, y=-19, z=297 },
+            { aetheryteName="Fanow", x=382, y=21, z=-194 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Picking up the Pieces",
+                "Pluck of the Draw",
+                "Monkeying Around",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Attack of the Killer Tomatl",
+                "I'll Be Bark",
+                "Tojil War",
+                "Tojil Annihilation",
+                "Tojil Carnage",
+                "Tojil Eclipse",
+                "Attack the Block",
+                "Queen of the Harpies",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "The Tempest",
+        zoneId = 818,
+        aetheryteList = {
+            { aetheryteName="The Ondo Cups", x=561, y=352, z=-199 },
+            { aetheryteName="The Macarenses Angle", x=-141, y=-280, z=218 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Low Coral Fiber",
+                "Pearls Apart",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Ondo of Blood",
+                "The Devil in the Deep Blue Sea",
+                "The Head, the Tail, the Whole Damned Thing",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Labyrinthos",
+        zoneId = 956,
+        aetheryteList = {
+            { aetheryteName="The Archeion", x=443, y=170, z=-476 },
+            { aetheryteName="Sharlayan Hamlet", x=8, y=-27, z=-46 },
+            { aetheryteName="Aporia", x=-729, y=-27, z=302 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Sheaves on the Wind",
+                "Moisture Farming",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Let It Grow",
+                "Incident Files: Steamed Vegetable",
+                "The Frailty of Life",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Thavnair",
+        zoneId = 957,
+        aetheryteList = {
+            { aetheryteName="Yedlihmad", x=193, y=6, z=629 },
+            { aetheryteName="The Great Work", x=-527, y=4, z=36 },
+            { aetheryteName="Palaka's Stand", x=405, y=5, z=-244 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Full Petal ALchemist: Perilous Pickings",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "The Accursed Kanabhuti",
+                "Return of the Tyrant",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Garlemald",
+        zoneId = 958,
+        aetheryteList = {
+            { aetheryteName="Camp Broken Glass", x=-408, y=24, z=479 },
+            { aetheryteName="Tertium", x=518, y=-35, z=-178 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Parts Unknown",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Artificial Malevolence: 15 Minutes to Comply",
+                "Roses Are Red, Violence is Due",
+                "Artificial Malevolence: Mighty Metatron",
+                "The Man with the Golden Son",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Mare Lamentorum",
+        zoneId = 959,
+        aetheryteList = {
+            { aetheryteName="Sinus Lacrimarum", x=-566, y=134, z=650 },
+            { aetheryteName="Bestways Burrow", x=-0, y=-128, z=-512 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "What a Thrill",
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "The Stones of Silence",
+                "Lepus Lamentorum: Crazy Contraption",
+                "Head Empty, Only Thoughts"
+            },
+            blacklistedFates= {
+                "Hunger Strikes", --really bad line of sight with rocks, get stuck not doing anything quite often
+            }
+        }
+    },
+    {
+        zoneName = "Ultima Thule",
+        zoneId = 960,
+        aetheryteList = {
+            { aetheryteName="Reah Tahra", x=-544, y=74, z=269 },
+            { aetheryteName="Abode of the Ea", x=64, y=272, z=-657 },
+            { aetheryteName="Base omicron", x=-489, y=437, z=333 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "Omicron Recall: Comms Expansion"
+            },
+            otherNpcFates= {},
+            bossFates= {
+                "Far from the Madding Horde",
+                "Nevermore",
+                "Wings of Glory",
+                "Omicron Recall: Killing Order",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
+        zoneName = "Elpis",
+        zoneId = 961,
+        aetheryteList = {
+            { aetheryteName="Anagnorisis", x=159, y=11, z=126 },
+            { aetheryteName="The Twelve Wonders", x=-633, y=-19, z=542 },
+            { aetheryteName="Poieten Oikos", x=-529, y=161, z=-222 },
+        },
+        fatesList= {
+            collectionsFates= {
+                "So Sorry, Sokles",
+            },
+            otherNpcFates= {
+                { fateName="Grand Designs: Unknown Execution", npcName="Meletos the Inscrutable" }
+            },
+            bossFates= {
+                "Grand Designs: Io",
+                "The Rustling of Murderous Leaves",
+                "Grand Designs: The Newest of New",
+                "Eurydike: All Bark, No Bite",
+            },
+            blacklistedFates= {}
+        }
+    },
+    {
         zoneName = "Urqopacha",
         zoneId = 1187,
         aetheryteList = {
@@ -309,8 +576,8 @@ FatesData = {
         zoneId=1188,
         aetheryteList={
             { aetheryteName="Ok'hanu", x=-170, y=6, z=-470 },
-            { aetheryteName="Many Fires", x=465, y=115, z=635 },
-            { aetheryteName="Earthenshire", x=545, y=115, z=200 }
+            { aetheryteName="Many Fires", x=541, y=117, z=203 },
+            { aetheryteName="Earthenshire", x=-477, y=124, z=311 }
         },
         fatesList={
             collectionsFates={
@@ -428,6 +695,47 @@ FatesData = {
     }
 }
 
+--Required Plugin Warning
+if not HasPlugin("vnavmesh") then
+    yield("/echo [FATE] Please Install vnavmesh")
+end
+if not HasPlugin("RotationSolverReborn") and not HasPlugin("RotationSolver") then
+    yield("/echo [FATE] Please Install Rotation Solver Reborn")
+end
+if not HasPlugin("PandorasBox") then
+    yield("/echo [FATE] Please Install Pandora's Box")
+end
+if not HasPlugin("ChatCoordinates") then
+    yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
+end
+
+--Optional Plugin Warning
+if EnableChangeInstance == true  then
+    if HasPlugin("Lifestream") == false then
+        yield("/echo [FATE] Please Install Lifestream or Disable ChangeInstance in the settings")
+    end
+end
+if Retainers then
+    if not HasPlugin("AutoRetainer") then
+        yield("/echo [FATE] Please Install AutoRetainer")
+    end
+    if TurnIn then
+        if not HasPlugin("Deliveroo") then
+            yield("/echo [FATE] Please Install Deliveroo")
+        end
+    end
+end
+if ExtractMateria == true then
+    if HasPlugin("YesAlready") == false then
+        yield("/echo [FATE] Please Install YesAlready")
+    end 
+end   
+if useBMR == true then
+    if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
+        yield("/echo [FATE] Please Install BossMod Reborn")
+    end
+end
+
 --Chocobo settings
 if ChocoboS == true then
     PandoraSetFeatureState("Auto-Summon Chocobo", true) 
@@ -464,44 +772,6 @@ setSNDProperty("StopMacroIfItemNotFound", false)
 setSNDProperty("StopMacroIfAddonNotFound", false)
 setSNDProperty("StopMacroIfAddonNotVisible", false)
 
---Required Plugin Warning
-if not HasPlugin("vnavmesh") then
-    yield("/echo [FATE] Please Install vnavmesh")
-end
-if not HasPlugin("RotationSolverReborn") and not HasPlugin("RotationSolver") then
-    yield("/echo [FATE] Please Install Rotation Solver Reborn")
-end
-if not HasPlugin("PandorasBox") then
-    yield("/echo [FATE] Please Install Pandora's Box")
-end
-if not HasPlugin("TextAdvance") then
-    yield("/echo [FATE] Please Install TextAdvance")
-end
-if not HasPlugin("ChatCoordinates") then
-    yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
-end
-
---Optional Plugin Warning
-if EnableChangeInstance == true  then
-    if HasPlugin("Lifestream") == false then
-        yield("/echo [FATE] Please Install Lifestream or Disable ChangeInstance in the settings")
-    end
-end
-if Retainers == true then
-    if HasPlugin("AutoRetainer") == false then
-        yield("/echo [FATE] Please Install AutoRetainer")
-    end
-end
-if ExtractMateria == true then
-    if HasPlugin("YesAlready") == false then
-        yield("/echo [FATE] Please Install YesAlready")
-    end 
-end   
-if useBMR == true then
-    if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
-        yield("/echo [FATE] Please Install BossMod Reborn")
-    end
-end 
 ------------------------------Functions----------------------------------------------
 
 function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
@@ -544,6 +814,7 @@ function TeleportTo(aetheryteName)
         LogInfo("[FATE] Teleporting...")
         yield("/wait 1")
     end
+    yield("/wait 3")
     LastTeleportTimeStamp = EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp())
 end
 
@@ -576,12 +847,19 @@ function Mount(mountName)
 end
 
 function HandleUnexpectedCombat()
-    TurnOnRSR()
-    while GetCharacterCondition(CharacterCondition.inCombat)do
+    if GetCharacterCondition(CharacterCondition.inCombat) then
+        TurnOnCombatMods()
+    end
+    
+    while GetCharacterCondition(CharacterCondition.inCombat) do
         if not HasTarget() or GetTargetHP() <= 0 then
             yield("/battletarget")
         end
         yield("/wait 1")
+    end
+
+    if not GetCharacterCondition(CharacterCondition.inCombat) then
+        TurnOffCombatMods()
     end
 end
 
@@ -768,9 +1046,7 @@ function MoveToFate(nextFate)
         SetMapFlag(SelectedZone.zoneId, nextFate.x, nextFate.y, nextFate.z)
     end
 
-    while GetCharacterCondition(CharacterCondition.inCombat) do
-        yield("/wait 1")
-    end
+    HandleUnexpectedCombat()
 
     local playerPosition = {
         x = GetPlayerRawXPos(),
@@ -841,8 +1117,12 @@ function InteractWithFateNpc(fate)
             yield("/interact")
             yield("/wait 1")
         end
-        if IsAddonVisible("SelectYesno") then
-            yield("/callback SelectYesno true 0")
+        while GetCharacterCondition(32) do
+            if IsAddonVisible("Talk") then
+                yield("/click Talk Click")
+            elseif IsAddonVisible("SelectYesno") then
+                yield("/callback SelectYesno true 0")
+            end
             yield("/wait 0.1")
         end
         -- wait until npc interaction is finished, then unselect the npc
@@ -876,7 +1156,6 @@ function EnemyPathing()
     end
 end
 
-CurrentInstance = 0
 --When there is no Fate 
 function ChangeInstance()
     --Change Instance
@@ -922,16 +1201,17 @@ function ChangeInstance()
         end
         yield("/automove off")
 
-        yield("/li "..CurrentInstance+1) -- start instance transfer
+        local nextInstance = (GetZoneInstance() % 3) + 1
+
+        yield("/li "..nextInstance) -- start instance transfer
         yield("/wait 1") -- wait for instance transfer to register
-        CurrentInstance = (CurrentInstance + 1) % 3
         while GetCharacterCondition(CharacterCondition.transition) do -- wait for instance transfer to complete
             LogInfo("[FATE] Waiting for instance transfer to complete...")
             yield("/wait 1")
         end
-        CurrentFate = SelectNextFate()
         yield("/lockon off")
     end
+    yield("/wait 3")
 end
 
 function AvoidEnemiesWhileFlying()
@@ -951,7 +1231,8 @@ function AvoidEnemiesWhileFlying()
     end
 end
 
-function TurnOnRSR()
+function TurnOnCombatMods()
+    -- turn on RSR in case you have the RSR 30 second out of combat timer set
     yield("/rotation manual")
     Class = GetClassJobId()
     
@@ -961,6 +1242,46 @@ function TurnOnRSR()
         yield("/rotation settings aoetype 1") -- cleave
     end
     yield("/wait 1")
+
+    if not bossModAIActive and useBMR then
+        yield("/bmrai on")
+        yield("/bmrai followtarget on")
+        yield("/bmrai followcombat on")
+        yield("/bmrai followoutofcombat on")
+
+        local ClassJob = GetClassJobId()
+        local MaxDistance = MeleeDist --default to melee distance
+        --ranged and casters have a further max distance so not always running all way up to target
+        if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
+            ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
+            ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
+            ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
+            ClassJob == 31 or -- Machinist
+            ClassJob == 33 or -- Astrologian
+            ClassJob == 35 or -- Red Mage
+            ClassJob == 38 or -- Dancer
+            ClassJob == 40 or -- Sage
+            ClassJob == 42 -- Pictomancer
+        then
+            MaxDistance = RangedDist
+        end
+        yield("/bmrai maxdistancetarget " .. MaxDistance)
+        bossModAIActive = true
+    end
+    yield("/wait 1")
+end
+
+function TurnOffCombatMods()
+    -- no need to turn RSR off
+
+    -- turn of BMR so you don't start engaging other mobs
+    if useBMR and bossModAIActive then
+        yield("/bmrai off")
+        yield("/bmrai followtarget off")
+        yield("/bmrai followcombat off")
+        yield("/bmrai followoutofcombat off")
+        bossModAIActive = false
+    end
 end
 
 function antistuck()
@@ -974,8 +1295,23 @@ function antistuck()
     PYY = GetPlayerRawYPos()
     PZZ = GetPlayerRawZPos()
 
+    local ClassJob = GetClassJobId()
+    local AntiStuckDist = MeleeDist-- default to melee distance
+    if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
+       ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
+       ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
+       ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
+       ClassJob == 31 or -- Machinist
+       ClassJob == 33 or -- Astrologian
+       ClassJob == 35 or -- Red Mage
+       ClassJob == 38 or -- Dancer
+       ClassJob == 40 or -- Sage
+       ClassJob == 42 then -- Pictomancer
+        AntiStuckDist = RangedDist -- max distance for ranged to attack is 25.5
+    end
+
     if PX == PXX and PY == PYY and PZ == PZZ then
-        while GetDistanceToTarget() > 3.5 and stuck < 20 do
+        while GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
             LogInfo("[FATE] Looping antistuck")
             local enemy_x = GetTargetRawXPos()
             local enemy_y = GetTargetRawYPos()
@@ -1029,6 +1365,53 @@ function HandleDeath()
     end
 end
 
+function PurchaseBicolorVouchers(bicolorGemCount)
+    local npcName = ""
+    if ShouldExchange and bicolorGemCount >= 1400 then
+        if not PathIsRunning() or not PathfindInProgress() then
+            if OldV then
+                TeleportTo("Old Sharlayan")
+                PathfindAndMoveTo(74.17, 5.15, -37.44)
+                npcName = "Gadfrid"
+            else
+                TeleportTo("Solution Nine")
+                yield("/wait 1")
+                yield("/li Nexus Arcade")
+                yield("/wait 5") -- lifestream takes a second to initiate
+                while GetCharacterCondition(CharacterCondition.transition) or GetCharacterCondition(CharacterCondition.occupied32) do
+                    yield("/wait 1")
+                end
+                PathfindAndMoveTo(-198.466, 0.922, -6.955)
+                npcName = "Beryl"
+            end
+        end
+        
+        while not HasTarget() or GetTargetName() ~= npcName or (GetTargetName() == npcName and GetDistanceToTarget() > 5) do
+            yield("/target "..npcName)
+            yield("/wait 1")
+        end
+        yield("/vnav stop")
+        yield("/interact")
+        yield("/wait 1")
+        while not IsAddonVisible("ShopExchangeCurrency") do
+            yield("/click Talk Click")
+            yield("/wait 1")
+        end
+        yield("/callback ShopExchangeCurrency false 0 5 "..(bicolorGemCount//100)) --Change the last number to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
+        while not IsAddonVisible("SelectYesno") do
+            yield("/wait 1")
+        end
+        yield("/callback SelectYesno true 0")
+        while IsAddonVisible("SelectYesno") do
+            yield("/wait 1")
+        end
+        while GetCharacterCondition(CharacterCondition.occupied32) do
+            yield("/callback ShopExchangeCurrency true -1")
+            yield("/wait 1")
+        end
+    end
+end
+
 ---------------------------Beginning of the Code------------------------------------
 
 --vnavmesh building
@@ -1042,13 +1425,7 @@ if NavIsReady() then
     yield("/echo [FATE] Mesh is Ready!")
 end
 
--- turn on TextAdvance
-if HasPlugin("TextAdvance") then
-    yield("/at y")
-end
-
-GemAnnouncementCount = 0
-cCount = 0
+GemAnnouncementLock = false
 AvailableFateCount = 0
 FoodCheck = 0
 
@@ -1079,7 +1456,6 @@ LastTeleportTimeStamp = 0
 --Start of the Loop
 
 LogInfo("[FATE] Starting fate farming script.")
-TurnOnRSR()
 
 while true do
     LogInfo("[FATE] Starting new iteration.")
@@ -1088,8 +1464,6 @@ while true do
         yield("/echo [FATE] Teleporting to "..teleport.." and resuming FATE farm.")
         TeleportTo(teleport)
     end
-
-    gems = GetItemCount(26807)
 
     --food usage
     if not (GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition)) then
@@ -1111,12 +1485,7 @@ while true do
         end
     end
 
-    ---------------------------Notification tab--------------------------------------
-    if gems > 1400 and cCount == 0 then
-        yield("/echo [FATE] You are almost capped with ur Bicolor Gems! <se.3>")
-        yield("/wait 1")
-        cCount = cCount +1
-    end
+    
     ---------------------------Select and Move to Fate--------------------------------------
 
     CurrentFate = SelectNextFate() -- init first fate object
@@ -1130,16 +1499,15 @@ while true do
         CurrentFate = SelectNextFate()
     end
     while CurrentFate == nil do
-        LogInfo("[FATE] Changing instances.")
-        ChangeInstance()
+        if EnableChangeInstance and GetZoneInstance() > 0 then
+            LogInfo("[FATE] Changing instances.")
+            ChangeInstance()
+        else
+            yield("/wait 10")
+        end
+        CurrentFate = SelectNextFate()
     end
     
-    --Announcement for gems
-    if GemAnnouncementCount == 0  and CurrentFate.fateId ~= 0 and Announce == 1 or Announce == 2 then
-        LogInfo("[FATE] Gems: "..gems)
-        yield("/wait 0.5")
-        GemAnnouncementCount = GemAnnouncementCount +1
-    end
     MoveToFate(CurrentFate)
 
     HandleDeath()
@@ -1213,31 +1581,21 @@ while true do
         end
     end
 
-    TurnOnRSR()
-    yield("/wait 3")
-
     -------------------------------Engage Fate Combat--------------------------------------------
     bossModAIActive = false
 
+    if IsInFate() then
+        --Activates Bossmod upon landing in a fate
+        TurnOnCombatMods()
+    end
     while IsInFate() do
-        CurrentInstance = 0
+        GemAnnouncementLock = false
+    
         yield("/vnavmesh stop")
         yield("/wait 1")
         while GetCharacterCondition(CharacterCondition.mounted) do
             yield("/gaction dismount")
             yield("/wait 1")
-        end
-
-        --Activates Bossmod upon landing in a fate
-        if not GetCharacterCondition(CharacterCondition.mounted) and not bossModAIActive then 
-            if useBMR then
-                yield("/bmrai on")
-                yield("/bmrai followtarget on")
-                yield("/bmrai followcombat on")
-                yield("/bmrai followoutofcombat on")
-                bossModAIActive = true
-                yield("/wait 3")
-            end
         end
 
         --Paths to enemys when Bossmod is disabled
@@ -1247,8 +1605,7 @@ while true do
         yield("/vnavmesh stop")
         yield("/wait 1")
         AvailableFateCount = 0
-        GemAnnouncementCount = 0
-        cCount = 0
+        
         antistuck()
         if GetCharacterCondition(CharacterCondition.dead) then
             HandleDeath()
@@ -1260,14 +1617,8 @@ while true do
     end
 
     --Disables bossmod when the fate is over
-    if not IsInFate() and bossModAIActive then 
-        if useBMR then
-            yield("/bmrai off")
-            yield("/bmrai followtarget off")
-            yield("/bmrai followcombat off")
-            yield("/bmrai followoutofcombat off")
-            bossModAIActive = false
-        end
+    if not IsInFate() then
+        TurnOffCombatMods()
     end
     yield("/echo [FATE] No longer in fate.")
 
@@ -1350,7 +1701,7 @@ while true do
     end
 
     --Retainer Process
-    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) then 
+    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) then
         LogInfo("[FATE] Handling retainers...")
         if ARRetainersWaitingToBeProcessed() == true then
             while not IsInZone(129) do
@@ -1401,13 +1752,13 @@ while true do
             yield("/wait 1")
             yield("/callback RetainerList true -1")
             yield("/wait 1")
-            while IsInZone(129) do
-                if IsAddonVisible("RetainerList") then
-                    yield("/callback RetainerList true -1")
-                    yield("/wait 1")
-                end
+            if IsAddonVisible("RetainerList") then
+                yield("/callback RetainerList true -1")
+                yield("/wait 1")
+            end
 
-                --Deliveroo
+            --Deliveroo
+            if TurnIn and HasPlugin("Deliveroo") then
                 if GetInventoryFreeSlotCount() < slots and TurnIn == true then
                     yield("/li gc")
                 end
@@ -1426,99 +1777,17 @@ while true do
     end
 
 
-    ------------------------------Vouchers-----------------------------------------------
-    --old Vouchers!
-    if gems > 1400 and Exchange == true and OldV == true then
-        LogInfo("[FATE] Exchanging for old vouchers.")
-        TeleportTo("Old Sharlayan")
-        yield("/wait 7")
-        while GetCharacterCondition(CharacterCondition.transition) == true do
-            yield("/wait 0.5")
-        end
-        if IsInZone(962) then
-            while PathIsRunning() == false or PathfindInProgress() == false do
-                PathfindAndMoveTo(72.497, 5.1499, -33.533)
-            end
-            yield("/wait 2")
-            while GetCharacterCondition(31) == false do
-                yield("/target Gadfrid")
-                yield("/wait 1")
-                yield("/interact")
-                yield("/click Talk Click") 
-                yield("/wait 1")
-            end
-            if GetCharacterCondition(31) == true then
-                yield("/callback ShopExchangeCurrency false 0 5 13") --Change the last number "13" to the amount u want to buy 
-                yield("/wait 1")
-                yield("/callback SelectYesno true 0")
-                yield("/wait 1")
-                yield("/callback ShopExchangeCurrency true -1")
-                yield("/wait 1")
-            end
+    ---------------------------Notification tab--------------------------------------
+    local bicolorGemCount = GetItemCount(26807)
+    if not GemAnnouncementLock then
+        GemAnnouncementLock = true
+        if bicolorGemCount > 1400 then
+            GemAnnouncementLock = true -- prevents spamming multiple times between fates
+            yield("/echo [FATE] You're almost capped with "..tostring(bicolorGemCount).."/1500 gems! <se.3>")
+            yield("/wait 1")
+        else
+            yield("/echo Gems: "..tostring(bicolorGemCount).."/1500")
         end
     end
-
-    --new Vouchers!
-    if gems > 1400 and Exchange == true and OldV == false then
-        LogInfo("[FATE] Exchanging for new vouchers.")
-        while not IsInZone(1186) do
-            TeleportTo("Solution Nine")
-            yield("/wait 7")
-                
-            while GetCharacterCondition(CharacterCondition.transition) == true do
-                yield("/wait 0.5")
-            end
-        end
-        if IsInZone(1186) then
-
-            while IsPlayerAvailable() == false or NavIsReady() == false do
-                yield("/wait 1")
-            end
-
-            while GetCharacterCondition(CharacterCondition.transition) == false do
-                yield("/li Nexus Arcade")
-                yield("/wait 2")
-            end
-
-            while GetCharacterCondition(CharacterCondition.transition) == true or GetCharacterCondition(32) == true do
-                yield("/wait 1")
-            end
-
-            if IsPlayerAvailable() == true and GetCharacterCondition(CharacterCondition.transition) == false or GetCharacterCondition(32) == false then
-                yield("/wait 1")
-                PathfindAndMoveTo(-198.466, 0.922, -6.955) --NPC
-                yield("/wait 1")
-            end
-
-            while PathIsRunning() == true or PathfindInProgress() == true do
-                yield("/wait 1")
-                while GetDistanceToPoint(-198.466, 0.922, -6.955) > 10 and GetDistanceToPoint(-198.466, 0.922, -6.955) < 15 do
-                    PathfindAndMoveTo(-198.466, 0.922, -6.955)
-                    yield("/echo [FATE] Repathing")
-                    yield("/wait 1")
-                end
-            end
-
-            if IsInZone(1186) and PathIsRunning() == false or PathfindInProgress() == false then
-                yield("/target Beryl")
-                yield("/wait 0.5")
-            
-                while IsInZone(1186) and not IsAddonVisible("ShopExchangeCurrency") do
-                    yield("/interact")
-                    yield("/wait 0.5")
-                    yield("/click Talk Click")
-                    yield("/wait 1")
-                end
-
-                if IsInZone(1186) and GetCharacterCondition(31) == true and IsAddonVisible("ShopExchangeCurrency") then
-                    yield("/callback ShopExchangeCurrency false 0 5 13") --Change the last number "13" to the amount you want to buy. Change the third number "5" to the item you want to buy (the first item will be 0 then 1, 2, 3 and so on )
-                    yield("/wait 0.5")
-                    yield("/callback SelectYesno true 0")
-                    yield("/wait 0.5")
-                    yield("/callback ShopExchangeCurrency true -1")
-                    yield("/wait 1")
-                end
-            end
-        end
-    end
+    PurchaseBicolorVouchers(bicolorGemCount)
 end
