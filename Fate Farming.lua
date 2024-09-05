@@ -600,12 +600,13 @@ FatesData = {
         fatesList= {
             collectionsFates= {
                 "Escape Shroom",
-                "The Spawning"
             },
             otherNpcFates= {
                 { fateName= "Could've Found Something Bigger", npcName= "Xbr'aal Hunter" },
                 { fateName= "Le Selva se lo Llevó", npcName= "Xbr'aal Hunter" },
                 { fateName= "Stabbing Gutward", npcName= "Doppro Spearbrother" },
+                { fateName= "Stick it to the Mantis", npcName= "Xbr'aal Sentry" },
+                { fateName= "Porting Is Such Sweet Sorrow", npcName= "Hoobigo Porter" },
             },
             bossFates= {
                 "Moths are Tough"
