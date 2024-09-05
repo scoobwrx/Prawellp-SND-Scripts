@@ -631,6 +631,7 @@ FatesData = {
             },
             otherNpcFates= {
                 { fateName= "The Dead Never Die", npcName= "Tonawawtan Worker" },
+                { fateName= "Ain't What I Herd", npcName= "Hhetsarro Herder" },
                 { fateName= "Helms off to the Bull", npcName= "Hhetsarro Herder" },
                 { fateName= "A Raptor Runs Through It", npcName= "Hhetsarro Angler" },
                 { fateName= "The Serpentlord Suffers", npcName= "Br'uk Vaw of the Setting Sun" },
