@@ -84,7 +84,7 @@ WaitIfBonusBuff = true          --Don't change instances if you have the Twist o
 CompletionToIgnoreFate = 80     --Percent above which to ignore fate
 MinTimeLeftToIgnoreFate = 3*60  --Seconds below which to ignore fate
 JoinBossFatesIfActive = true    --Join boss fates if someone is already working on it (to avoid soloing long boss fates). If false, avoid boss fates entirely.
-CompletionToJoinBossFate = 20   --Percent above which to join boss fate
+CompletionToJoinBossFate = 0   --Percent above which to join boss fate
 fatewait = 0                    --the amount how long it should when before dismounting (0 = at the beginning of the fate 3-5 = should be in the middle of the fate)
 useBMR = true                   --if you want to use the BossMod dodge/follow mode
 
@@ -612,7 +612,7 @@ FatesData = {
                 "Moths are Tough"
             },
             blacklistedFates= {
-                "The Departed"
+                --"The Departed"
             }
         }
     },
@@ -630,12 +630,16 @@ FatesData = {
                 "The Serpentlord Sires" -- Br'uk Vaw of the Setting Sun
             },
             otherNpcFates= {
+                { fateName= "The Dead Never Die", npcName= "Tonawawtan Worker" },
+                { fateName= "Helms off to the Bull", npcName= "Hhetsarro Herder" },
+                { fateName= "A Raptor Runs Through It", npcName= "Hhetsarro Angler" },
+                { fateName= "The Serpentlord Suffers", npcName= "Br'uk Vaw of the Setting Sun" },
             },
             bossFates= {
                 "The Serpentlord Seethes",
                 "Breaking the Jaw",
-                "Helms off to the Bull", -- boss NPC fate, Hhetsarro Herder
-                "The Dead Never Die", -- boss NPC fate, Tonawawtan Worker
+                --"Helms off to the Bull", -- boss NPC fate, Hhetsarro Herder
+                --"The Dead Never Die", -- boss NPC fate, Tonawawtan Worker
             },
             blacklistedFates= {}
         }
