@@ -635,6 +635,7 @@ FatesData = {
                 { fateName= "Helms off to the Bull", npcName= "Hhetsarro Herder" },
                 { fateName= "A Raptor Runs Through It", npcName= "Hhetsarro Angler" },
                 { fateName= "The Serpentlord Suffers", npcName= "Br'uk Vaw of the Setting Sun" },
+                { fateName= "That's Me and the Porter", npcName= " Pelupelu Peddler" },
             },
             bossFates= {
                 "The Serpentlord Seethes",
