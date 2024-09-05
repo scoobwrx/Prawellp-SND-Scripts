@@ -8,8 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.4  *
+  *  1.1.5  *
   ***********
+    -> 1.1.5    Normalized distances after SND update
     -> 1.1.4    Fixed check for (0,y,0) fates
     -> 1.1.1    Merged mount functions by CurlyWorm
     -> 1.1.0    Removed dependency on TextAdvance
@@ -752,10 +753,10 @@ setSNDProperty("StopMacroIfAddonNotVisible", false)
 ------------------------------Functions----------------------------------------------
 
 function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
-    teleportTimePenalty = 300000 -- to account for how long teleport takes you
+    teleportTimePenalty = 200 -- to account for how long teleport takes you
 
     local aetheryteForClosestFate = nil
-    local closestTravelDistance = GetDistanceToPoint(nextFate.x, nextFate.y, nextFate.z)^2
+    local closestTravelDistance = GetDistanceToPoint(nextFate.x, nextFate.y, nextFate.z)
     LogInfo("[FATE] Direct flight distance is: "..closestTravelDistance)
     for j, aetheryte in ipairs(SelectedZone.aetheryteList) do
         local distanceAetheryteToFate = DistanceBetween(aetheryte.x, aetheryte.y, aetheryte.z, nextFate.x, nextFate.y, nextFate.z)
@@ -991,6 +992,8 @@ function SelectNextFate()
                 elseif IsBossFate(tempFate.fateName) then
                     if JoinBossFatesIfActive and tempFate.progress >= CompletionToJoinBossFate then
                         nextFate = SelectNextFateHelper(tempFate, nextFate)
+                    else
+                        LogInfo("[FATE] Skipping fate #"..tempFate.fateId.." "..tempFate.fateName.." due to boss fate with not enough progress.")
                     end
                 elseif tempFate.duration ~= 0 then -- else is normal fate. avoid unlisted talk to npc fates
                     nextFate = SelectNextFateHelper(tempFate, nextFate)
@@ -1339,11 +1342,15 @@ function PurchaseBicolorVouchers(bicolorGemCount)
     if ShouldExchange and bicolorGemCount >= 1400 then
         if not PathIsRunning() or not PathfindInProgress() then
             if OldV then
-                TeleportTo("Old Sharlayan")
+                if not IsInZone(962) then
+                    TeleportTo("Old Sharlayan")
+                end
                 PathfindAndMoveTo(74.17, 5.15, -37.44)
                 npcName = "Gadfrid"
             else
-                TeleportTo("Solution Nine")
+                if not IsInZone(1186) then
+                    TeleportTo("Solution Nine")
+                end
                 yield("/wait 1")
                 yield("/li Nexus Arcade")
                 yield("/wait 5") -- lifestream takes a second to initiate
