@@ -4,13 +4,14 @@
   *            Fate Farming              * 
   ****************************************
 
-  Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9
+  Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
   ***********
   * Version *
-  *  1.1.3  *
+  *  1.1.5  *
   ***********
-    -> 1.1.3    Reverteed check for (0,y,0) fates, there was a bug
+    -> 1.1.5    Normalized distances after SND update
+    -> 1.1.4    Fixed check for (0,y,0) fates
     -> 1.1.1    Merged mount functions by CurlyWorm
     -> 1.1.0    Removed dependency on TextAdvance
     -> 1.0.8    Merged changes for ShB areas and better antistuck by scoobwrx
@@ -101,7 +102,7 @@ Food = ""                  --Leave "" Blank if you don't want to use any food
                            --if its HQ include <hq> next to the name "Baked Eggplant <hq>"
 
 --Retainer
-Retainers = true          --should it do Retainers
+Retainers = false          --should it do Retainers
 TurnIn = false             --should it to Turn ins at the GC (requires Deliveroo)
 slots = 5                  --how much inventory space before turning in
 
@@ -764,10 +765,10 @@ setSNDProperty("StopMacroIfAddonNotVisible", false)
 ------------------------------Functions----------------------------------------------
 
 function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
-    teleportTimePenalty = 300000 -- to account for how long teleport takes you
+    teleportTimePenalty = 200 -- to account for how long teleport takes you
 
     local aetheryteForClosestFate = nil
-    local closestTravelDistance = GetDistanceToPoint(nextFate.x, nextFate.y, nextFate.z)^2
+    local closestTravelDistance = GetDistanceToPoint(nextFate.x, nextFate.y, nextFate.z)
     LogInfo("[FATE] Direct flight distance is: "..closestTravelDistance)
     for j, aetheryte in ipairs(SelectedZone.aetheryteList) do
         local distanceAetheryteToFate = DistanceBetween(aetheryte.x, aetheryte.y, aetheryte.z, nextFate.x, nextFate.y, nextFate.z)
@@ -984,7 +985,7 @@ function SelectNextFate()
         end
         LogInfo("[FATE] Time left on fate #:"..tempFate.fateId..": "..math.floor(tempFate.timeLeft//60).."min, "..math.floor(tempFate.timeLeft%60).."s")
         
-        -- if tempFate.x == 0 and tempFate.z == 0 then -- sometimes game doesn't send the correct coords
+        if not (tempFate.x == 0 and tempFate.z == 0) then -- sometimes game doesn't send the correct coords
             if IsCollectionsFate(tempFate.fateName) then -- skip collections fates
                 LogInfo("[FATE] Skipping fate #"..tempFate.fateId.." "..tempFate.fateName.." due to being collections fate.")
             elseif not IsBlacklistedFate(tempFate.fateName) then -- check fate is not blacklisted for any reason
@@ -1003,13 +1004,15 @@ function SelectNextFate()
                 elseif IsBossFate(tempFate.fateName) then
                     if JoinBossFatesIfActive and tempFate.progress >= CompletionToJoinBossFate then
                         nextFate = SelectNextFateHelper(tempFate, nextFate)
+                    else
+                        LogInfo("[FATE] Skipping fate #"..tempFate.fateId.." "..tempFate.fateName.." due to boss fate with not enough progress.")
                     end
                 elseif tempFate.duration ~= 0 then -- else is normal fate. avoid unlisted talk to npc fates
                     nextFate = SelectNextFateHelper(tempFate, nextFate)
                 end
                 LogInfo("[FATE] Finished considering fate #"..tempFate.fateId.." "..tempFate.fateName)
             end
-        -- end
+        end
     end
 
     LogInfo("[FATE] Finished considering all fates")
@@ -1032,8 +1035,6 @@ function MoveToFate(nextFate)
     if HasPlugin("ChatCoordinates") then
         SetMapFlag(SelectedZone.zoneId, nextFate.x, nextFate.y, nextFate.z)
     end
-
-    HandleUnexpectedCombat()
 
     local playerPosition = {
         x = GetPlayerRawXPos(),
@@ -1080,30 +1081,30 @@ function InteractWithFateNpc(fate)
 
         HandleUnexpectedCombat()
 
-        while not HasTarget() and IsFateActive(fate.fateId) and not IsInFate() do -- break conditions in case someone snipes the interact before you
-            yield("/echo [FATE] Cannot find NPC target")
+        repeat -- break conditions in case someone snipes the interact before you
+            yield("/echo [FATE] Searching for NPC target")
             -- PathfindAndMoveTo(target.x, target.y, target.z)
             -- yield("/target "..target.npcName)
             yield("/target "..fate.npcName)
             yield("/wait 1")
-        end
+        until (HasTarget() and GetTargetName()==fate.npcName) or IsFateActive(fate.fateId)
 
         -- LogDebug("[FATE] Found fate NPC "..target.npcName..". Current distance: "..DistanceBetween(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), target.x, target.y, target.z))
 
         yield("/lockon on")
         yield("/automove")
 
-        while GetDistanceToTarget() > 5 and not IsInFate() do -- break conditions in case someone snipes the interact before you
+        while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() do -- break conditions in case someone snipes the interact before you
             yield("/wait 0.5")
         end
         yield("/vnavmesh stop")
         yield("/wait 1")
 
-        while not IsAddonVisible("SelectYesno") and not IsInFate() and IsPlayerAvailable() do -- break conditions in case someone snipes the interact before you
+        repeat -- break conditions in case someone snipes the interact before you
             yield("/interact")
             yield("/wait 1")
-        end
-        while GetCharacterCondition(32) do
+        until IsAddonVisible("Talk") or IsInFate()
+        while GetCharacterCondition(CharacterCondition.occupied32) do
             if IsAddonVisible("Talk") then
                 yield("/click Talk Click")
             elseif IsAddonVisible("SelectYesno") then
@@ -1111,10 +1112,7 @@ function InteractWithFateNpc(fate)
             end
             yield("/wait 0.1")
         end
-        -- wait until npc interaction is finished, then unselect the npc
-        while not IsPlayerAvailable() do
-            yield("/wait 1")
-        end
+        yield("/wait 1")
         yield("/lockon off")
         yield("/automove off")
         yield("/wait 1") -- wait to register
@@ -1356,11 +1354,15 @@ function PurchaseBicolorVouchers(bicolorGemCount)
     if ShouldExchange and bicolorGemCount >= 1400 then
         if not PathIsRunning() or not PathfindInProgress() then
             if OldV then
-                TeleportTo("Old Sharlayan")
+                if not IsInZone(962) then
+                    TeleportTo("Old Sharlayan")
+                end
                 PathfindAndMoveTo(74.17, 5.15, -37.44)
                 npcName = "Gadfrid"
             else
-                TeleportTo("Solution Nine")
+                if not IsInZone(1186) then
+                    TeleportTo("Solution Nine")
+                end
                 yield("/wait 1")
                 yield("/li Nexus Arcade")
                 yield("/wait 5") -- lifestream takes a second to initiate
@@ -1543,14 +1545,12 @@ while true do
         LogInfo("[FATE] Arrived at Fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
         yield("/vnavmesh stop")
         if GetCharacterCondition(CharacterCondition.flying) then
-            yield("/echo Landing...")
             yield("/gaction dismount") -- first dismount call only lands the mount
             yield("/wait 3")
             while GetCharacterCondition(CharacterCondition.flying) do
                 antistuck()
             end
         end
-        yield("/echo Dismounting...")
         yield("/gaction dismount") -- actually dismount
         yield("/wait 1")
         -- antistuck()
@@ -1606,11 +1606,9 @@ while true do
     if not IsInFate() then
         TurnOffCombatMods()
     end
-    yield("/echo [FATE] No longer in fate.")
 
     -----------------------------After Fate------------------------------------------
     HandleUnexpectedCombat()
-    yield("/echo [FATE] Out of combat.")
 
     --Repair function
     if RepairAmount > 0 and not GetCharacterCondition(CharacterCondition.mounted) then
@@ -1768,11 +1766,10 @@ while true do
     if not GemAnnouncementLock then
         GemAnnouncementLock = true
         if bicolorGemCount > 1400 then
-            GemAnnouncementLock = true -- prevents spamming multiple times between fates
             yield("/echo [FATE] You're almost capped with "..tostring(bicolorGemCount).."/1500 gems! <se.3>")
             yield("/wait 1")
         else
-            yield("/echo Gems: "..tostring(bicolorGemCount).."/1500")
+            yield("/echo [FATE] Gems: "..tostring(bicolorGemCount).."/1500")
         end
     end
     PurchaseBicolorVouchers(bicolorGemCount)
