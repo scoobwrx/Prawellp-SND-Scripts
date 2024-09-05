@@ -84,7 +84,7 @@ WaitIfBonusBuff = true          --Don't change instances if you have the Twist o
 CompletionToIgnoreFate = 80     --Percent above which to ignore fate
 MinTimeLeftToIgnoreFate = 3*60  --Seconds below which to ignore fate
 JoinBossFatesIfActive = true    --Join boss fates if someone is already working on it (to avoid soloing long boss fates). If false, avoid boss fates entirely.
-CompletionToJoinBossFate = 0   --Percent above which to join boss fate
+CompletionToJoinBossFate = 20   --Percent above which to join boss fate
 fatewait = 0                    --the amount how long it should when before dismounting (0 = at the beginning of the fate 3-5 = should be in the middle of the fate)
 useBMR = true                   --if you want to use the BossMod dodge/follow mode
 
