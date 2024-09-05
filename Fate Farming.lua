@@ -389,13 +389,21 @@ FatesData = {
                 "Low Coral Fiber",
                 "Pearls Apart",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                --{ fateName= "The Seashells He Sells", npcName= "Mewshs Laan" }, this is an escort fate
+                { fateName= "Where has the Dagon", npcName= "Teushs Ooan" },
+                { fateName= "Ondo of Blood", npcName= "Teushs Ooan" },
+                { fateName= "Lookin' Back on the Track", npcName= "Teushs Ooan" },
+            },
             bossFates= {
                 "Ondo of Blood",
                 "The Devil in the Deep Blue Sea",
                 "The Head, the Tail, the Whole Damned Thing",
             },
-            blacklistedFates= {}
+            blacklistedFates= {
+                "Coral Support", -- escort fate
+                "The Seashells He Sells", -- escort fate
+            }
         }
     },
     {
