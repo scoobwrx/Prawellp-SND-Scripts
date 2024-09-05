@@ -602,7 +602,11 @@ FatesData = {
                 "Escape Shroom",
                 "The Spawning"
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Could've Found Something Bigger", npcName= "Xbr'aal Hunter" },
+                { fateName= "Le Selva se lo Llevó", npcName= "Xbr'aal Hunter" },
+                { fateName= "Stabbing Gutward", npcName= "Doppro Spearbrother" },
+            },
             bossFates= {
                 "Moths are Tough"
             },
