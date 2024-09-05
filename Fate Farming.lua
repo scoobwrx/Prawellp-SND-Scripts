@@ -521,7 +521,7 @@ FatesData = {
                 "So Sorry, Sokles",
             },
             otherNpcFates= {
-                { fateName="Grand Designs: Unknown Execution", npcName="Meletos the Inscrutable" }
+                { fateName="Grand Designs: Unknown Execution", npcName="Meletos the Inscrutable" },
                 { fateName= "Grand Designs: Aigokeros", npcName= "Meletos the Inscrutable" },
                 { fateName= "Nature's Staunch Protector", npcName= "Monoceros Monitor" },
             },
