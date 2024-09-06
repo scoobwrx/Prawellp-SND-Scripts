@@ -1065,10 +1065,14 @@ function IsFateActive(fateId)
 end
 
 function InteractWithFateNpc(fate)
-    while not IsInFate() do
+    while not IsInFate() and IsFateActive(fate.fateId) do
         yield("/wait 1")
 
         HandleUnexpectedCombat()
+
+        if not IsFateActive(fate.fateId) then
+            break
+        end
 
         repeat -- break conditions in case someone snipes the interact before you
             yield("/echo [FATE] Searching for NPC target")
@@ -1078,12 +1082,16 @@ function InteractWithFateNpc(fate)
             yield("/wait 1")
         until (HasTarget() and GetTargetName()==fate.npcName) or IsInFate() or not IsFateActive(fate.fateId)
 
+        if not IsFateActive(fate.fateId) then
+            break
+        end
+
         -- LogDebug("[FATE] Found fate NPC "..target.npcName..". Current distance: "..DistanceBetween(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), target.x, target.y, target.z))
 
         yield("/lockon on")
         yield("/automove")
 
-        while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() do -- break conditions in case someone snipes the interact before you
+        while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() and IsFateActive(fate.fateId) do -- break conditions in case someone snipes the interact before you
             yield("/wait 0.5")
         end
         yield("/vnavmesh stop")
@@ -1092,7 +1100,7 @@ function InteractWithFateNpc(fate)
         repeat -- break conditions in case someone snipes the interact before you
             yield("/interact")
             yield("/wait 1")
-        until IsAddonVisible("Talk") or IsInFate()
+        until IsAddonVisible("Talk") or IsInFate() or not IsFateActive(fate.fateId)
         while GetCharacterCondition(CharacterCondition.occupied32) do
             if IsAddonVisible("Talk") then
                 yield("/click Talk Click")
@@ -1534,7 +1542,7 @@ while true do
         yield("/echo [FATE] Arrived at fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
         LogInfo("[FATE] Arrived at Fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
         yield("/vnavmesh stop")
-        while GetCharacterCondition(CharacterCondition.flying) do
+        while GetCharacterCondition(CharacterCondition.mounted) do
             if GetCharacterCondition(CharacterCondition.flying) then
                 yield("/gaction dismount") -- first dismount call only lands the mount
                 yield("/wait 3")
