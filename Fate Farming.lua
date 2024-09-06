@@ -8,8 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.7  *
+  *  1.1.8  *
   ***********
+    -> 1.1.8    Fixed dismount upon arriving at fate issue
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
     -> 1.1.6    Fixed landing loop
     -> 1.1.4    Fixed check for (0,y,0) fates
