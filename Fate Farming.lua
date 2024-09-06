@@ -8,8 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.6  *
+  *  1.1.7  *
   ***********
+    -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
     -> 1.1.6    Fixed landing loop
     -> 1.1.4    Fixed check for (0,y,0) fates
     -> 1.1.1    Merged mount functions by CurlyWorm
@@ -683,9 +684,6 @@ end
 if not HasPlugin("PandorasBox") then
     yield("/echo [FATE] Please Install Pandora's Box")
 end
-if not HasPlugin("ChatCoordinates") then
-    yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
-end
 
 --Optional Plugin Warning
 if EnableChangeInstance == true  then
@@ -712,6 +710,9 @@ if useBMR == true then
     if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
         yield("/echo [FATE] Please Install BossMod Reborn")
     end
+end
+if not HasPlugin("ChatCoordinates") then
+    yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
 end
 
 --Chocobo settings
@@ -1075,7 +1076,7 @@ function InteractWithFateNpc(fate)
             -- yield("/target "..target.npcName)
             yield("/target "..fate.npcName)
             yield("/wait 1")
-        until (HasTarget() and GetTargetName()==fate.npcName) or IsFateActive(fate.fateId)
+        until (HasTarget() and GetTargetName()==fate.npcName) or IsInFate() or not IsFateActive(fate.fateId)
 
         -- LogDebug("[FATE] Found fate NPC "..target.npcName..". Current distance: "..DistanceBetween(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), target.x, target.y, target.z))
 
