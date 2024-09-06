@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.5  *
+  *  1.1.6  *
   ***********
-    -> 1.1.5    Normalized distances after SND update
+    -> 1.1.6    Fixed landing loop
     -> 1.1.4    Fixed check for (0,y,0) fates
     -> 1.1.1    Merged mount functions by CurlyWorm
     -> 1.1.0    Removed dependency on TextAdvance
@@ -1527,21 +1527,22 @@ while true do
 
     --Dismounting upon arriving at fate
     while GetCharacterCondition(CharacterCondition.mounted) and
-          (IsInFate() or (IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 20))
+          GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 20 and
+          (IsInFate() or (IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0))
     do
         yield("/echo [FATE] Arrived at fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
         LogInfo("[FATE] Arrived at Fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
         yield("/vnavmesh stop")
-        if GetCharacterCondition(CharacterCondition.flying) then
-            yield("/gaction dismount") -- first dismount call only lands the mount
-            yield("/wait 3")
-            while GetCharacterCondition(CharacterCondition.flying) do
-                antistuck()
+        while GetCharacterCondition(CharacterCondition.flying) do
+            if GetCharacterCondition(CharacterCondition.flying) then
+                yield("/gaction dismount") -- first dismount call only lands the mount
+                yield("/wait 3")
+                
             end
+            yield("/gaction dismount") -- actually dismount
+            yield("/wait 1")
+            antistuck()
         end
-        yield("/gaction dismount") -- actually dismount
-        yield("/wait 1")
-        -- antistuck()
     end
 
     -- need to talk to npc to start fate
