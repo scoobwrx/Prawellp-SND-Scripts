@@ -746,6 +746,7 @@ if useBM == true then
             BMorBMR = "BMR"
         else
             BMorBMR = "BM"
+        end
     end
 end
 if not HasPlugin("ChatCoordinates") then
