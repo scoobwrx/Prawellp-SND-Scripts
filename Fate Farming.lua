@@ -8,8 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.7  *
+  *  1.1.9  *
   ***********
+    -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
     -> 1.1.6    Fixed landing loop
     -> 1.1.4    Fixed check for (0,y,0) fates
@@ -581,7 +582,8 @@ FatesData = {
         },
         fatesList={
             collectionsFates={
-                "Borne on the Backs of Burrowers"
+                "Borne on the Backs of Burrowers",
+                "Combing the Area"
             },
             otherNpcFates= {},
             bossFates= {
@@ -643,8 +645,8 @@ FatesData = {
             bossFates= {
                 "The Serpentlord Seethes",
                 "Breaking the Jaw",
-                --"Helms off to the Bull", -- boss NPC fate, Hhetsarro Herder
-                --"The Dead Never Die", -- boss NPC fate, Tonawawtan Worker
+                "Helms off to the Bull", -- boss NPC fate, Hhetsarro Herder
+                "The Dead Never Die", -- boss NPC fate, Tonawawtan Worker
             },
             blacklistedFates= {}
         }
@@ -688,8 +690,7 @@ FatesData = {
         fatesList= {
             collectionsFates= {
                 "Seeds of Tomorrow",
-                "Scattered Memories",
-                "Combing the Area"
+                "Scattered Memories"
             },
             otherNpcFates= {
                 { fateName= "Canal Carnage", npcName= "Unlost Sentry GX" },
@@ -889,13 +890,13 @@ end
 
 function Mount()
     local max_retries = 10     -- Maximum number of retries
-    local retry_interval = 3.0 -- Time interval between retries in seconds
+    local retry_interval = 1.0 -- Time interval between retries in seconds
     local retries = 0          -- Counter for the number of retries
     if GetCharacterCondition(CharacterCondition.mounted) then
         return
     end
     
-    while retries < max_retries do
+    while not IsInFate() and retries < max_retries do
         if MountToUse == "mount roulette" then
             yield('/gaction "mount roulette"')
         else
@@ -907,9 +908,7 @@ function Mount()
         end
         retries = retries + 1
     end
-    repeat
         yield("/wait 0.1")
-    until IsPlayerAvailable() and GetCharacterCondition(CharacterCondition.mounted)
 end
 
 function HandleUnexpectedCombat()
@@ -1192,10 +1191,14 @@ function IsFateActive(fateId)
 end
 
 function InteractWithFateNpc(fate)
-    while not IsInFate() do
+    while not IsInFate() and IsFateActive(fate.fateId) do
         yield("/wait 1")
 
         HandleUnexpectedCombat()
+
+        if not IsFateActive(fate.fateId) then
+            break
+        end
 
         repeat -- break conditions in case someone snipes the interact before you
             yield("/echo [FATE] Searching for NPC target")
@@ -1205,12 +1208,16 @@ function InteractWithFateNpc(fate)
             yield("/wait 1")
         until (HasTarget() and GetTargetName()==fate.npcName) or IsInFate() or not IsFateActive(fate.fateId)
 
+        if not IsFateActive(fate.fateId) then
+            break
+        end
+
         -- LogDebug("[FATE] Found fate NPC "..target.npcName..". Current distance: "..DistanceBetween(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), target.x, target.y, target.z))
 
         yield("/lockon on")
         yield("/automove")
 
-        while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() do -- break conditions in case someone snipes the interact before you
+        while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() and IsFateActive(fate.fateId) do -- break conditions in case someone snipes the interact before you
             yield("/wait 0.5")
         end
         yield("/vnavmesh stop")
@@ -1219,7 +1226,7 @@ function InteractWithFateNpc(fate)
         repeat -- break conditions in case someone snipes the interact before you
             yield("/interact")
             yield("/wait 1")
-        until IsAddonVisible("Talk") or IsInFate()
+        until IsAddonVisible("Talk") or IsInFate() or not IsFateActive(fate.fateId)
         while GetCharacterCondition(CharacterCondition.occupied32) do
             if IsAddonVisible("Talk") then
                 yield("/click Talk Click")
