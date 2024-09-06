@@ -60,8 +60,8 @@ This Plugins are Optional and not needed unless you have it enabled in the setti
     -> Lifestream :  (for chaning Instances [ChangeInstance][Exchange]) https://raw.githubusercontent.com/NightmareXIV/MyDalamudPlugins/main/pluginmaster.json
     -> AutoRetainer : (for Retainers [Retainers])   https://love.puni.sh/ment.json
     -> Deliveroo : (for gc turn ins [TurnIn])   https://plugins.carvel.li/
-    -> Bossmod Reborn : (for AI dodging [BMR])  https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json
-        -> make sure to set the Max distance in the AI Settings to the desired distance (25 is to far for Meeles)
+    -> Bossmod/BossModReborn: (for AI dodging)  https://puni.sh/api/repository/veyn
+                                                https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json
     -> ChatCoordinates : (for setting a flag on the next Fate) available via base /xlplugins
 
 ]]
@@ -87,14 +87,15 @@ MinTimeLeftToIgnoreFate = 3*60  --Seconds below which to ignore fate
 JoinBossFatesIfActive = true    --Join boss fates if someone is already working on it (to avoid soloing long boss fates). If false, avoid boss fates entirely.
 CompletionToJoinBossFate = 20   --Percent above which to join boss fate
 fatewait = 0                    --the amount how long it should when before dismounting (0 = at the beginning of the fate 3-5 = should be in the middle of the fate)
-useBMR = true                   --if you want to use the BossMod dodge/follow mode
+useBM = true                   --if you want to use the BossMod dodge/follow mode
+BMorBMR = "BMR"
 
 --Ranged attacks and spells max distance to be usable is 25.49y, 25.5 is "target out of range"
 --Melee attacks (auto attacks) max distance is 2.59y, 2.60 is "target out of range"
 --ranged and casters have a further max distance so not always running all way up to target
 --users can adjust below settings to their liking
 MeleeDist = 2.5                 --distance for BMRAI melee
-RangedDist = 5                  --distance for BMRAI ranged
+RangedDist = 20                 --distance for BMRAI ranged
 
 --Utilities
 RepairAmount = 20          --the amount it needs to drop before Repairing (set it to 0 if you don't want it to repaier. onky supports self repair)
@@ -613,7 +614,7 @@ FatesData = {
                 "Moths are Tough"
             },
             blacklistedFates= {
-                --"The Departed"
+                "The Departed"
             }
         }
     },
@@ -628,7 +629,7 @@ FatesData = {
         fatesList= {
             collectionsFates= {
                 "Gonna Have Me Some Fur",
-                "The Serpentlord Sires" -- Br'uk Vaw of the Setting Sun
+                "The Serpentlord Sires", -- Br'uk Vaw of the Setting Sun
             },
             otherNpcFates= {
                 { fateName= "The Dead Never Die", npcName= "Tonawawtan Worker" },
@@ -737,9 +738,14 @@ if ExtractMateria == true then
         yield("/echo [FATE] Please Install YesAlready")
     end 
 end   
-if useBMR == true then
+if useBM == true then
     if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
-        yield("/echo [FATE] Please Install BossMod Reborn")
+        yield("/echo [FATE] Please Install BossMod")
+    else
+        if HasPlugin("BossModReborn") then
+            BMorBMR = "BMR"
+        else
+            BMorBMR = "BM"
     end
 end
 if not HasPlugin("ChatCoordinates") then
@@ -1247,11 +1253,7 @@ function TurnOnCombatMods()
     end
     yield("/wait 1")
 
-    if not bossModAIActive and useBMR then
-        yield("/bmrai on")
-        yield("/bmrai followtarget on")
-        yield("/bmrai followcombat on")
-        yield("/bmrai followoutofcombat on")
+    if not bossModAIActive and useBM then
 
         local ClassJob = GetClassJobId()
         local MaxDistance = MeleeDist --default to melee distance
@@ -1269,7 +1271,18 @@ function TurnOnCombatMods()
         then
             MaxDistance = RangedDist
         end
-        yield("/bmrai maxdistancetarget " .. MaxDistance)
+        if BMorBMR == "BMR" then
+            yield("/bmrai on")
+            yield("/bmrai followtarget on")
+            yield("/bmrai followcombat on")
+            yield("/bmrai followoutofcombat on")
+            yield("/bmrai maxdistancetarget " .. MaxDistance)
+        else
+            yield("/vbmai on")
+            --yield("/vbmai followtarget on")
+            --yield("/vbmai followcombat on")
+            --yield("/vbmai followoutofcombat on")
+        end
         bossModAIActive = true
     end
     yield("/wait 1")
@@ -1279,11 +1292,18 @@ function TurnOffCombatMods()
     -- no need to turn RSR off
 
     -- turn of BMR so you don't start engaging other mobs
-    if useBMR and bossModAIActive then
-        yield("/bmrai off")
-        yield("/bmrai followtarget off")
-        yield("/bmrai followcombat off")
-        yield("/bmrai followoutofcombat off")
+    if useBM and bossModAIActive then
+        if BMorBMR == "BMR" then
+            yield("/bmrai off")
+            yield("/bmrai followtarget off")
+            yield("/bmrai followcombat off")
+            yield("/bmrai followoutofcombat off")
+        else
+            yield("/vbmai off")
+            --yield("/vbmai followtarget off")
+            --yield("/vbmai followcombat off")
+            --yield("/vbmai followoutofcombat off")
+        end
         bossModAIActive = false
     end
 end
@@ -1606,7 +1626,7 @@ while true do
         end
 
         --Paths to enemys when Bossmod is disabled
-        if not useBMR then 
+        if not useBM then
             EnemyPathing()
         end
         yield("/vnavmesh stop")
