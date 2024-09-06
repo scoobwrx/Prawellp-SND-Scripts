@@ -617,7 +617,6 @@ FatesData = {
             },
             blacklistedFates= {
                 "The Departed",
-                "Stick it to the Mantis"
             }
         }
     },
