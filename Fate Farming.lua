@@ -908,7 +908,7 @@ function Mount()
         end
         retries = retries + 1
     end
-        yield("/wait 0.1")
+    yield("/wait 0.1")
 end
 
 function HandleUnexpectedCombat()
