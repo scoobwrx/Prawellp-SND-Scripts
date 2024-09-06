@@ -561,7 +561,8 @@ FatesData = {
         },
         fatesList={
             collectionsFates={
-                "Borne on the Backs of Burrowers"
+                "Borne on the Backs of Burrowers",
+                "Combing the Area"
             },
             otherNpcFates= {},
             bossFates= {
@@ -656,8 +657,7 @@ FatesData = {
         fatesList= {
             collectionsFates= {
                 "Seeds of Tomorrow",
-                "Scattered Memories",
-                "Combing the Area"
+                "Scattered Memories"
             },
             otherNpcFates= {
                 { fateName= "Canal Carnage", npcName= "Unlost Sentry GX" },
