@@ -847,7 +847,6 @@ function Dismount()
                 yield('/ac dismount')
             end
             -- as a last ditch effort quit trying to dismount and teleport
-            LogInfo("[FATE]Dismount Timeout_length: ".. os.clock() - timeout_start)
             if timeout_check(timeout_start,15) then
                 TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
                 return
@@ -864,7 +863,6 @@ function Dismount()
             end
             yield('/ac dismount')
             -- as a last ditch effort quit trying to dismount and teleport
-            LogInfo("[FATE]Dismount Timeout_length: ".. os.clock() - timeout_start)
             if timeout_check(timeout_start,15) then
                 TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
                 return
@@ -1136,37 +1134,11 @@ function MoveToFate(nextFate)
     local randomX = nextFate.x + radius / 2 * math.cos(angle)
     local randomY = nextFate.y
     local randomZ = nextFate.z + radius / 2 * math.sin(angle)
-    LogInfo("[FatePositionX]: Random_".. randomX.. " Center_" .. nextFate.x)
-    LogInfo("[FatePositionY]: Center_" .. nextFate.y)
-    LogInfo("[FatePositionZ]: Random_".. randomZ.. " Center_" .. nextFate.z)
-    -- below false statement is for allowing unlandable
-    -- QueryMeshPointOnFloorX(float x, float y, float z, bool allowUnlandable, float halfExtentXZ)
+
     local i = 5
     local nearestLandX = QueryMeshNearestPointX(randomX,randomY,randomZ,i,i)
     local nearestLandY = QueryMeshNearestPointY(randomX,randomY,randomZ,i,i)
     local nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,randomZ,i,i)
-    --[[
-    local nearestLandX = QueryMeshPointOnFloorX(randomX,randomY,randomZ,false,i)
-    local nearestLandY = QueryMeshPointOnFloorY(randomX,randomY,randomZ,false,i)
-    local nearestLandZ = QueryMeshPointOnFloorZ(randomX,randomY,randomZ,false,i)
-    while not nearestLandX  do
-        nearestLandX = QueryMeshPointOnFloorX(randomX,randomY,randomZ,false,i)
-        i = i  + 1
-    end
-    i = 5
-    while not nearestLandY do
-        nearestLandY = QueryMeshPointOnFloorY(nearestLandX,randomY,randomZ,false,i)
-        i = i  + 1
-    end
-    i = 5
-    while not nearestLandZ do
-        nearestLandZ = QueryMeshPointOnFloorZ(nearestLandX,nearestLandY,randomZ,false,i)
-        i = i  + 1
-    end
-    --]]
-    LogInfo("[LandX]: ".. nearestLandX)
-    LogInfo("[LandY]: " .. nearestLandY)
-    LogInfo("[LandZ]: ".. nearestLandZ)
 
     if HasPlugin("ChatCoordinates") then
         SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
