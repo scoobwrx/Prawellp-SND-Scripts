@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.8  *
+  *  1.1.9  *
   ***********
-    -> 1.1.8    Fixed dismount upon arriving at fate issue
+    -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
     -> 1.1.6    Fixed landing loop
     -> 1.1.4    Fixed check for (0,y,0) fates
@@ -806,7 +806,7 @@ function Mount()
         return
     end
     
-    while retries < max_retries do
+    while not IsInFate() and retries < max_retries do
         if MountToUse == "mount roulette" then
             yield('/gaction "mount roulette"')
         else
@@ -818,9 +818,7 @@ function Mount()
         end
         retries = retries + 1
     end
-    repeat
-        yield("/wait 0.1")
-    until IsPlayerAvailable() and GetCharacterCondition(CharacterCondition.mounted)
+    yield("/wait 0.1")
 end
 
 function HandleUnexpectedCombat()
