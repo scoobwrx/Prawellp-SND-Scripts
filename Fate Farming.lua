@@ -606,7 +606,7 @@ FatesData = {
                 "Escape Shroom",
             },
             otherNpcFates= {
-                { fateName= "Could've Found Something Bigger", npcName= "Xbr'aal Hunter" },
+                --{ fateName= "Could've Found Something Bigger", npcName= "Xbr'aal Hunter" }, 2 npcs names same thing....
                 { fateName= "Le Selva se lo Llevó", npcName= "Xbr'aal Hunter" },
                 { fateName= "Stabbing Gutward", npcName= "Doppro Spearbrother" },
                 --{ fateName= "Stick it to the Mantis", npcName= "Xbr'aal Sentry" }, -- 2 npcs named same thing.....
@@ -816,9 +816,16 @@ function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
     end
 end
 
+--simple function to check a time limit
+function timeout_check(start, length)
+    if os.clock() - start > length then
+        return true
+    end
+    return false
+end
+
 --Wrapper to dismount
 function Dismount()
-    local timeout_threshold = 15 -- number of seconds before moving on
     local timeout_start = os.clock()
 
     local playerPosition = {
@@ -833,37 +840,37 @@ function Dismount()
 
     --77 condition is flight
     --4 condition is mounted
-    if GetCharacterCondition(77) then
-        yield('/gaction "Mount Roulette"')
+    if GetCharacterCondition(CharacterCondition.flying) then
+        yield('/ac dismount')
         repeat
             yield("/wait ".. 1)
-            if GetCharacterCondition(77) then
-                yield('/gaction "Mount Roulette"')
+            if GetCharacterCondition(CharacterCondition.flying) then
+                yield('/ac dismount')
             end
             -- as a last ditch effort quit trying to dismount and teleport
             LogInfo("[FATE]Dismount Timeout_length: ".. os.clock() - timeout_start)
-            if os.clock() - timeout_start > 15 then
+            if timeout_check(timeout_start,15) then
                 TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
                 return
             end
-        until not GetCharacterCondition(77)
+        until not GetCharacterCondition(CharacterCondition.flying)
     end
 
-    if GetCharacterCondition(4) then
-        yield('/gaction "Mount Roulette"')
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        yield('/ac dismount')
         repeat
             yield("/wait ".. 1)
-            if GetCharacterCondition(4) then
-                yield('/gaction "Mount Roulette"')
+            if GetCharacterCondition(CharacterCondition.mounted) then
+                yield('/ac dismount')
             end
-            yield('/gaction "Mount Roulette"')
+            yield('/ac dismount')
             -- as a last ditch effort quit trying to dismount and teleport
             LogInfo("[FATE]Dismount Timeout_length: ".. os.clock() - timeout_start)
-            if os.clock() - timeout_start > 15 then
+            if timeout_check(timeout_start,15) then
                 TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
                 return
             end
-        until not GetCharacterCondition(4)
+        until not GetCharacterCondition(CharacterCondition.mounted)
     end
 end
 
@@ -889,26 +896,16 @@ function TeleportTo(aetheryteName)
 end
 
 function Mount()
-    local max_retries = 10     -- Maximum number of retries
-    local retry_interval = 1.0 -- Time interval between retries in seconds
-    local retries = 0          -- Counter for the number of retries
-    if GetCharacterCondition(CharacterCondition.mounted) then
-        return
-    end
-    
-    while not IsInFate() and retries < max_retries do
+    while not GetCharacterCondition(CharacterCondition.mounted) do
         if MountToUse == "mount roulette" then
             yield('/gaction "mount roulette"')
         else
             yield('/mount "' .. MountToUse .. '"')
         end
-        yield("/wait " .. retry_interval)
-        if GetCharacterCondition(CharacterCondition.mounted) then
-            break
-        end
-        retries = retries + 1
+        repeat
+            yield("/wait ".. 0.1)
+        until not IsPlayerCasting()
     end
-    yield("/wait 0.1")
 end
 
 function HandleUnexpectedCombat()
@@ -1106,6 +1103,30 @@ function SelectNextFate()
     return nextFate
 end
 
+function random_direct()
+    --math.random will return -1,0,1 so i'm working around it to get only a -1 or 1 by making a table
+    local rng_dir = {-1,1}
+    return rng_dir[math.random(1,2)]
+end
+
+--Paths to the Fate NPC Starter
+function MoveToNPC(fate)
+
+    if HasTarget() and GetTargetName()==fate.npcName then
+        local npc_x = GetTargetRawXPos() + (3 * random_direct())
+        local npc_y = GetTargetRawYPos()
+        local npc_z = GetTargetRawZPos() + (3 * random_direct())
+
+        local i = 5
+        local nearestLandX = QueryMeshNearestPointX(npc_x,npc_y,npc_z,i,i)
+        local nearestLandY = QueryMeshNearestPointY(npc_x,npc_y,npc_z,i,i)
+        local nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,npc_z,i,i)
+
+        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
+    end
+
+end
+
 --Paths to the Fate
 function MoveToFate(nextFate)
     LogInfo("[FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
@@ -1167,16 +1188,18 @@ function MoveToFate(nextFate)
         end
     end
 
-    if HasFlightUnlocked(SelectedZone.zoneId) then
-        LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
-        yield("/vnavmesh stop")
-        yield("/wait 1")
-        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, true)
-    else
-        LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
-        yield("/vnavmesh stop")
-        yield("/wait 1")
-        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ)
+    if not IsInFate() then
+        if HasFlightUnlocked(SelectedZone.zoneId) then
+            LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
+            yield("/vnavmesh stop")
+            yield("/wait 1")
+            PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, true)
+        else
+            LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
+            yield("/vnavmesh stop")
+            yield("/wait 1")
+            PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ)
+        end
     end
 end
 
@@ -1214,8 +1237,7 @@ function InteractWithFateNpc(fate)
 
         -- LogDebug("[FATE] Found fate NPC "..target.npcName..". Current distance: "..DistanceBetween(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), target.x, target.y, target.z))
 
-        yield("/lockon on")
-        yield("/automove")
+        MoveToNPC(fate)
 
         while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() and IsFateActive(fate.fateId) do -- break conditions in case someone snipes the interact before you
             yield("/wait 0.5")
@@ -1235,9 +1257,6 @@ function InteractWithFateNpc(fate)
             end
             yield("/wait 0.1")
         end
-        yield("/wait 1")
-        yield("/lockon off")
-        yield("/automove off")
         yield("/wait 1") -- wait to register
         while GetTargetName() == fate.npcName do
             ClearTarget()
@@ -1433,9 +1452,9 @@ function antistuck()
     if PX == PXX and PY == PYY and PZ == PZZ then
         while GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
             LogInfo("[FATE] Looping antistuck")
-            local enemy_x = GetTargetRawXPos()
+            local enemy_x = GetTargetRawXPos() + (3 * random_direct())
             local enemy_y = GetTargetRawYPos()
-            local enemy_z = GetTargetRawZPos()
+            local enemy_z = GetTargetRawZPos() + (3 * random_direct())
             if PathIsRunning() == false and GetCharacterCondition(4, false) then 
                 LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
                 yield("/vnavmesh stop")
@@ -1638,6 +1657,7 @@ while true do
 
     ---------------------------- While vnavmesh is Moving ------------------------------
 
+    local fateNPCNav = false
     -- while vnavmesh is moving to a fate
     while PathIsRunning() or PathfindInProgress() and not IsInFate() do
         
@@ -1645,6 +1665,14 @@ while true do
         if GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.flying) and HasFlightUnlocked(SelectedZone.zoneId) then 
             yield("/gaction jump")
             yield("/wait 0.3")
+        end
+
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
+            yield("/target "..CurrentFate.npcName)
+            if HasTarget() and GetTargetName()==CurrentFate.npcName then
+                MoveToNPC(CurrentFate)
+                fateNPCNav = true
+            end
         end
 
         --Stops Moving to dead Fates or change paths to better fates
@@ -1661,11 +1689,23 @@ while true do
         end
     end
 
+    local timeout_start = os.clock()
     --wait for path to complete
     while (IsInFate() or (IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0)) and
           PathIsRunning() and PathfindInProgress()
     do
         yield("/wait 0.1")
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
+            yield("/target "..CurrentFate.npcName)
+            if HasTarget() and GetTargetName()==CurrentFate.npcName then
+                MoveToNPC(CurrentFate)
+                fateNPCNav = true
+            end
+        end
+        if timeout_check(timeout_start,10) then
+            yield("/vnav stop")
+            break
+        end
     end
 
     --Dismount
