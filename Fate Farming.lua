@@ -827,6 +827,7 @@ end
 --Wrapper to dismount
 function Dismount()
     local timeout_start = os.clock()
+    local unable_to_dismount = false
 
     local playerPosition = {
         x = GetPlayerRawXPos(),
@@ -846,13 +847,16 @@ function Dismount()
             if GetCharacterCondition(CharacterCondition.flying) then
                 yield('/ac dismount')
             end
-            -- as a last ditch effort quit trying to dismount and teleport
-            -- if timeout_check(timeout_start,15) then
-            --     TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
-            --     return
-            -- end
-            antistuck()
+            -- if still mounted after 10 seconds then stop trying
+            if timeout_check(timeout_start,10) then
+                unable_to_dismount = true
+                break
+            end
         until not GetCharacterCondition(CharacterCondition.mounted)
+    end
+    --teleport to reset position after unable to dismount to let the script continue
+    if unable_to_dismount then
+        TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
     end
 end
 
@@ -1105,6 +1109,22 @@ function MoveToNPC(fate)
         local nearestLandY = QueryMeshNearestPointY(npc_x,npc_y,npc_z,i,i)
         local nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,npc_z,i,i)
 
+        --coffee farmer/ Birds up exception to land on the side of fence enemies spawn
+        -- z -528 will be on right side of fence
+        if fate.fateName == "Birds Up" then
+            nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,-530,i,i)
+            repeat
+                nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,-530,i,i)
+            until nearestLandZ <= -528
+        end
+
+        -- in case a point isn't able to be found default to npc
+        if nearestLandX == nil or nearestLandY == nil or nearestLandZ == nil then
+            nearestLandX = GetTargetRawXPos()
+            nearestLandY = GetTargetRawYPos()
+            nearestLandZ = GetTargetRawZPos()
+        end
+
         PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
     end
 
@@ -1116,7 +1136,8 @@ function MoveToFate(nextFate)
     yield("/echo [FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
 
     local angle = math.random() * 2 * math.pi
-    local radius = 30 -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
+    local radius = GetFateRadius(nextFate.fateId)
+    LogInfo("[FATE] Radius ".. radius)
     local randomX = nextFate.x + radius / 2 * math.cos(angle)
     local randomY = nextFate.y
     local randomZ = nextFate.z + radius / 2 * math.sin(angle)
@@ -1125,6 +1146,22 @@ function MoveToFate(nextFate)
     local nearestLandX = QueryMeshNearestPointX(randomX,randomY,randomZ,i,i)
     local nearestLandY = QueryMeshNearestPointY(randomX,randomY,randomZ,i,i)
     local nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,randomZ,i,i)
+
+    --coffee farmer/ Birds up exception to land on the side of fence enemies spawn
+    -- z -528 will be on right side of fence
+    if nextFate.fateName == "Birds Up" then
+        nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,-530,i,i)
+        repeat
+            nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,-530,i,i)
+        until nearestLandZ <= -528
+    end
+
+    -- in case a point isn't able to be found default to fate location
+    if nearestLandX == nil or nearestLandY == nil or nearestLandZ == nil then
+        nearestLandX = nextFate.x
+        nearestLandY = nextFate.y
+        nearestLandZ = nextFate.z
+    end
 
     if HasPlugin("ChatCoordinates") then
         SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
@@ -1301,6 +1338,25 @@ function AvoidEnemiesWhileFlying()
     end
 end
 
+function RangedJob()
+    local ClassJob = GetClassJobId()
+
+    if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
+        ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
+        ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
+        ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
+        ClassJob == 31 or -- Machinist
+        ClassJob == 33 or -- Astrologian
+        ClassJob == 35 or -- Red Mage
+        ClassJob == 38 or -- Dancer
+        ClassJob == 40 or -- Sage
+        ClassJob == 42 then -- Pictomancer
+        return true
+    else
+        return false
+    end
+end
+
 function TurnOnCombatMods()
     -- turn on RSR in case you have the RSR 30 second out of combat timer set
     yield("/rotation manual")
@@ -1315,22 +1371,12 @@ function TurnOnCombatMods()
 
     if not bossModAIActive and useBM then
 
-        local ClassJob = GetClassJobId()
         local MaxDistance = MeleeDist --default to melee distance
         --ranged and casters have a further max distance so not always running all way up to target
-        if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
-            ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
-            ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
-            ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
-            ClassJob == 31 or -- Machinist
-            ClassJob == 33 or -- Astrologian
-            ClassJob == 35 or -- Red Mage
-            ClassJob == 38 or -- Dancer
-            ClassJob == 40 or -- Sage
-            ClassJob == 42 -- Pictomancer
-        then
+        if RangedJob() then
             MaxDistance = RangedDist
         end
+
         if BMorBMR == "BMR" then
             yield("/bmrai on")
             yield("/bmrai followtarget on")
@@ -1379,47 +1425,40 @@ function antistuck()
     PYY = GetPlayerRawYPos()
     PZZ = GetPlayerRawZPos()
 
-    local ClassJob = GetClassJobId()
     local AntiStuckDist = MeleeDist-- default to melee distance
-    if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
-       ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
-       ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
-       ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
-       ClassJob == 31 or -- Machinist
-       ClassJob == 33 or -- Astrologian
-       ClassJob == 35 or -- Red Mage
-       ClassJob == 38 or -- Dancer
-       ClassJob == 40 or -- Sage
-       ClassJob == 42 then -- Pictomancer
+
+    if RangedJob() then
         AntiStuckDist = RangedDist -- max distance for ranged to attack is 25.5
     end
 
     if PX == PXX and PY == PYY and PZ == PZZ then
-        while GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
-            LogInfo("[FATE] Looping antistuck")
-            local enemy_x = GetTargetRawXPos() + (3 * random_direct())
-            local enemy_y = GetTargetRawYPos()
-            local enemy_z = GetTargetRawZPos() + (3 * random_direct())
-            if PathIsRunning() == false and GetCharacterCondition(4, false) then 
-                LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
+        if HasTarget() then
+            -- noticed melee jobs tend to dance around if the antistuck distance is same as the melee distance so giving it 1.5y flex
+            while GetDistanceToTarget() > AntiStuckDist + 1.5 and stuck < 20 do
+                LogInfo("[FATE] Looping antistuck")
+
+                if not PathIsRunning() then
+                    local enemy_x = GetTargetRawXPos() + (AntiStuckDist * random_direct())
+                    local enemy_y = GetTargetRawYPos()
+                    local enemy_z = GetTargetRawZPos() + (AntiStuckDist * random_direct())
+
+                    local nearestX = QueryMeshNearestPointX(enemy_x,enemy_y,enemy_z,5,5)
+                    local nearestY = QueryMeshNearestPointY(enemy_x,enemy_y,enemy_z,5,5)
+                    local nearestZ = QueryMeshNearestPointZ(enemy_x,enemy_y,enemy_z,5,5)
+                    LogInfo("[FATE] Moving to enemy "..nearestX..", "..nearestY..", "..nearestZ)
+                    yield("/vnavmesh stop")
+                    yield("/wait 1")
+                    PathfindAndMoveTo(nearestX, nearestY, nearestZ, GetCharacterCondition(CharacterCondition.flying))
+                end
+                yield("/wait 0.5")
+                stuck = stuck + 1
+            end
+            if stuck >= 20 then
                 yield("/vnavmesh stop")
                 yield("/wait 1")
-                PathfindAndMoveTo(enemy_x, enemy_y, enemy_z)
             end
-            if not PathIsRunning() and GetCharacterCondition(4, true) then
-                LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
-                yield("/vnavmesh stop")
-                yield("/wait 1")
-                PathfindAndMoveTo(enemy_x, enemy_y, enemy_z, true)
-            end
-            yield("/wait 0.5")
-            stuck = stuck + 1
+            stuck = 0
         end
-        if stuck >= 20 then
-            yield("/vnavmesh stop")
-            yield("/wait 1")
-        end
-        stuck = 0
     end
 end
 
