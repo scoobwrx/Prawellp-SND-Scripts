@@ -1137,7 +1137,6 @@ function MoveToFate(nextFate)
 
     local angle = math.random() * 2 * math.pi
     local radius = GetFateRadius(nextFate.fateId)
-    LogInfo("[FATE] Radius ".. radius)
     local randomX = nextFate.x + radius / 2 * math.cos(angle)
     local randomY = nextFate.y
     local randomZ = nextFate.z + radius / 2 * math.sin(angle)
