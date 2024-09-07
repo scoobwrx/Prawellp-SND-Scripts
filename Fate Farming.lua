@@ -8,8 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.10  *
+  *  1.1.11  *
   ***********
+    -> 1.1.11   Skip retainer if Twist of Fate buff is up
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -104,7 +105,7 @@ Food = ""                  --Leave "" Blank if you don't want to use any food
                            --if its HQ include <hq> next to the name "Baked Eggplant <hq>"
 
 --Retainer
-Retainers = false          --should it do Retainers
+Retainers = true           --should it do Retainers
 TurnIn = false             --should it to Turn ins at the GC (requires Deliveroo)
 slots = 5                  --how much inventory space before turning in
 
@@ -141,6 +142,7 @@ CharacterCondition = {
     occupied39=39,
     transition=45,
     jumping=48,
+    mounting=64,
     flying=77
 }
 
@@ -877,15 +879,15 @@ end
 
 function Mount()
     while not GetCharacterCondition(CharacterCondition.mounted) do
-        if not IsPlayerCasting() then
+        if not IsPlayerCasting() and not GetCharacterCondition(CharacterCondition.mounting) then
             if MountToUse == "mount roulette" then
                 yield('/gaction "mount roulette"')
             else
                 yield('/mount "' .. MountToUse)
             end
-            yield("/wait ".. 0.1)
-            HandleUnexpectedCombat()
         end
+        yield("/wait ".. 1)
+        HandleUnexpectedCombat()
     end
 end
 
@@ -1781,7 +1783,8 @@ while true do
     end
 
     --Retainer Process
-    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) then
+    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) and
+       (not WaitIfBonusBuff or not (HasStatusId(1288) or HasStatusId(1289))) then
         LogInfo("[FATE] Handling retainers...")
         if ARRetainersWaitingToBeProcessed() == true then
             while not IsInZone(129) do
