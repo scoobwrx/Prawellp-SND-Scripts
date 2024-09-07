@@ -1444,6 +1444,13 @@ function antistuck()
                     local nearestX = QueryMeshNearestPointX(enemy_x,enemy_y,enemy_z,5,5)
                     local nearestY = QueryMeshNearestPointY(enemy_x,enemy_y,enemy_z,5,5)
                     local nearestZ = QueryMeshNearestPointZ(enemy_x,enemy_y,enemy_z,5,5)
+
+                    if nearestX == nil or nearestY == nil or nearestZ == nil then
+                        nearestX = enemy_x
+                        nearestY = enemy_y
+                        nearestZ = enemy_z
+                    end
+
                     LogInfo("[FATE] Moving to enemy "..nearestX..", "..nearestY..", "..nearestZ)
                     yield("/vnavmesh stop")
                     yield("/wait 1")
