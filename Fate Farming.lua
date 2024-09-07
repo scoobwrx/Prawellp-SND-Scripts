@@ -8,15 +8,14 @@
 
   ***********
   * Version *
-  *  1.1.9  *
+  *  1.1.10  *
   ***********
+    -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
     -> 1.1.6    Fixed landing loop
     -> 1.1.4    Fixed check for (0,y,0) fates
     -> 1.1.1    Merged mount functions by CurlyWorm
-    -> 1.1.0    Removed dependency on TextAdvance
-    -> 1.0.8    Merged changes for ShB areas and better antistuck by scoobwrx
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -837,9 +836,8 @@ function Dismount()
         yield("/vnav stop")
     end
 
-    --77 condition is flight
-    --4 condition is mounted
-    if GetCharacterCondition(CharacterCondition.flying) then
+    -- characters that are flying are also mounted
+    if GetCharacterCondition(CharacterCondition.mounted) then
         yield('/ac dismount')
         repeat
             yield("/wait ".. 1)
@@ -847,26 +845,11 @@ function Dismount()
                 yield('/ac dismount')
             end
             -- as a last ditch effort quit trying to dismount and teleport
-            if timeout_check(timeout_start,15) then
-                TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
-                return
-            end
-        until not GetCharacterCondition(CharacterCondition.flying)
-    end
-
-    if GetCharacterCondition(CharacterCondition.mounted) then
-        yield('/ac dismount')
-        repeat
-            yield("/wait ".. 1)
-            if GetCharacterCondition(CharacterCondition.mounted) then
-                yield('/ac dismount')
-            end
-            yield('/ac dismount')
-            -- as a last ditch effort quit trying to dismount and teleport
-            if timeout_check(timeout_start,15) then
-                TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
-                return
-            end
+            -- if timeout_check(timeout_start,15) then
+            --     TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
+            --     return
+            -- end
+            antistuck()
         until not GetCharacterCondition(CharacterCondition.mounted)
     end
 end
@@ -894,14 +877,15 @@ end
 
 function Mount()
     while not GetCharacterCondition(CharacterCondition.mounted) do
-        if MountToUse == "mount roulette" then
-            yield('/gaction "mount roulette"')
-        else
-            yield('/mount "' .. MountToUse .. '"')
-        end
-        repeat
+        if not IsPlayerCasting() then
+            if MountToUse == "mount roulette" then
+                yield('/gaction "mount roulette"')
+            else
+                yield('/mount "' .. MountToUse)
+            end
             yield("/wait ".. 0.1)
-        until not IsPlayerCasting()
+            HandleUnexpectedCombat()
+        end
     end
 end
 
@@ -1160,17 +1144,10 @@ function MoveToFate(nextFate)
     end
 
     if not IsInFate() then
-        if HasFlightUnlocked(SelectedZone.zoneId) then
-            LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
-            yield("/vnavmesh stop")
-            yield("/wait 1")
-            PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, true)
-        else
-            LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
-            yield("/vnavmesh stop")
-            yield("/wait 1")
-            PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ)
-        end
+        LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
+        yield("/vnavmesh stop")
+        yield("/wait 1")
+        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
     end
 end
 
@@ -1193,22 +1170,17 @@ function InteractWithFateNpc(fate)
         if not IsFateActive(fate.fateId) then
             break
         end
-
-        repeat -- break conditions in case someone snipes the interact before you
+        
+        -- if target is already selected earlier during pathing, avoids having to target and move again
+        while (not HasTarget() or GetTargetName()~=fate.npcName) and not IsInFate() and IsFateActive(fate.fateId) do
             yield("/echo [FATE] Searching for NPC target")
             -- PathfindAndMoveTo(target.x, target.y, target.z)
             -- yield("/target "..target.npcName)
             yield("/target "..fate.npcName)
             yield("/wait 1")
-        until (HasTarget() and GetTargetName()==fate.npcName) or IsInFate() or not IsFateActive(fate.fateId)
-
-        if not IsFateActive(fate.fateId) then
-            break
+            
+            MoveToNPC(fate)
         end
-
-        -- LogDebug("[FATE] Found fate NPC "..target.npcName..". Current distance: "..DistanceBetween(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), target.x, target.y, target.z))
-
-        MoveToNPC(fate)
 
         while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() and IsFateActive(fate.fateId) do -- break conditions in case someone snipes the interact before you
             yield("/wait 0.5")
@@ -1685,9 +1657,7 @@ while true do
     end
 
     -- need to talk to npc to start fate
-    if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and
-       not GetCharacterCondition(CharacterCondition.mounted)
-    then
+    if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 then
         InteractWithFateNpc(CurrentFate)
     else
         if not UsePandoraSync then
