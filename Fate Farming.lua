@@ -8,15 +8,14 @@
 
   ***********
   * Version *
-  *  1.1.9  *
+  *  1.1.10  *
   ***********
+    -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
     -> 1.1.6    Fixed landing loop
     -> 1.1.4    Fixed check for (0,y,0) fates
     -> 1.1.1    Merged mount functions by CurlyWorm
-    -> 1.1.0    Removed dependency on TextAdvance
-    -> 1.0.8    Merged changes for ShB areas and better antistuck by scoobwrx
     -> 1.0.0    Code changes
                     added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
                     added map flag for next fate
@@ -61,8 +60,8 @@ This Plugins are Optional and not needed unless you have it enabled in the setti
     -> Lifestream :  (for chaning Instances [ChangeInstance][Exchange]) https://raw.githubusercontent.com/NightmareXIV/MyDalamudPlugins/main/pluginmaster.json
     -> AutoRetainer : (for Retainers [Retainers])   https://love.puni.sh/ment.json
     -> Deliveroo : (for gc turn ins [TurnIn])   https://plugins.carvel.li/
-    -> Bossmod Reborn : (for AI dodging [BMR])  https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json
-        -> make sure to set the Max distance in the AI Settings to the desired distance (25 is to far for Meeles)
+    -> Bossmod/BossModReborn: (for AI dodging)  https://puni.sh/api/repository/veyn
+                                                https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json
     -> ChatCoordinates : (for setting a flag on the next Fate) available via base /xlplugins
 
 ]]
@@ -88,14 +87,15 @@ MinTimeLeftToIgnoreFate = 3*60  --Seconds below which to ignore fate
 JoinBossFatesIfActive = true    --Join boss fates if someone is already working on it (to avoid soloing long boss fates). If false, avoid boss fates entirely.
 CompletionToJoinBossFate = 20   --Percent above which to join boss fate
 fatewait = 0                    --the amount how long it should when before dismounting (0 = at the beginning of the fate 3-5 = should be in the middle of the fate)
-useBMR = true                   --if you want to use the BossMod dodge/follow mode
+useBM = true                   --if you want to use the BossMod dodge/follow mode
+BMorBMR = "BMR"
 
 --Ranged attacks and spells max distance to be usable is 25.49y, 25.5 is "target out of range"
 --Melee attacks (auto attacks) max distance is 2.59y, 2.60 is "target out of range"
 --ranged and casters have a further max distance so not always running all way up to target
 --users can adjust below settings to their liking
 MeleeDist = 2.5                 --distance for BMRAI melee
-RangedDist = 5                  --distance for BMRAI ranged
+RangedDist = 20                 --distance for BMRAI ranged
 
 --Utilities
 RepairAmount = 20          --the amount it needs to drop before Repairing (set it to 0 if you don't want it to repaier. onky supports self repair)
@@ -318,7 +318,9 @@ FatesData = {
                 "The Elderblade",
                 "The Odd Couple",
             },
-            blacklistedFates= {}
+            blacklistedFates= {
+                "Tolba No. 1", -- pathing is really bad to enemies
+            }
         }
     },
     {
@@ -333,7 +335,9 @@ FatesData = {
             collectionsFates= {
                 "Twice Upon a Time",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Once Upon a Time", npcName= "Nectar-seeking Pixie" },
+            },
             bossFates= {
                 "Thrice Upon a Time",
                 "Locus Terribilis",
@@ -359,7 +363,9 @@ FatesData = {
                 "Pluck of the Draw",
                 "Monkeying Around",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Queen of the Harpies", npcName= "Fanow Huntress" },
+            },
             bossFates= {
                 "Attack of the Killer Tomatl",
                 "I'll Be Bark",
@@ -385,13 +391,21 @@ FatesData = {
                 "Low Coral Fiber",
                 "Pearls Apart",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                --{ fateName= "The Seashells He Sells", npcName= "Mewshs Laan" }, this is an escort fate
+                { fateName= "Where has the Dagon", npcName= "Teushs Ooan" },
+                { fateName= "Ondo of Blood", npcName= "Teushs Ooan" },
+                { fateName= "Lookin' Back on the Track", npcName= "Teushs Ooan" },
+            },
             bossFates= {
                 "Ondo of Blood",
                 "The Devil in the Deep Blue Sea",
                 "The Head, the Tail, the Whole Damned Thing",
             },
-            blacklistedFates= {}
+            blacklistedFates= {
+                "Coral Support", -- escort fate
+                "The Seashells He Sells", -- escort fate
+            }
         }
     },
     {
@@ -468,7 +482,10 @@ FatesData = {
             collectionsFates= {
                 "What a Thrill",
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Lepus Lamentorum: Dynamite Disaster", npcName= "Warringway" },
+                { fateName= "Lepus Lamentorum: Cleaner Catastrophe", npcName= "Fallingway" },
+            },
             bossFates= {
                 "The Stones of Silence",
                 "Lepus Lamentorum: Crazy Contraption",
@@ -491,11 +508,12 @@ FatesData = {
             collectionsFates= {
                 "Omicron Recall: Comms Expansion"
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                { fateName= "Wings of Glory", npcName= "Ahl Ein's Kin" },
+            },
             bossFates= {
                 "Far from the Madding Horde",
                 "Nevermore",
-                "Wings of Glory",
                 "Omicron Recall: Killing Order",
             },
             blacklistedFates= {}
@@ -514,7 +532,9 @@ FatesData = {
                 "So Sorry, Sokles",
             },
             otherNpcFates= {
-                { fateName="Grand Designs: Unknown Execution", npcName="Meletos the Inscrutable" }
+                { fateName="Grand Designs: Unknown Execution", npcName="Meletos the Inscrutable" },
+                { fateName= "Grand Designs: Aigokeros", npcName= "Meletos the Inscrutable" },
+                { fateName= "Nature's Staunch Protector", npcName= "Monoceros Monitor" },
             },
             bossFates= {
                 "Grand Designs: Io",
@@ -583,14 +603,19 @@ FatesData = {
         fatesList= {
             collectionsFates= {
                 "Escape Shroom",
-                "The Spawning"
             },
-            otherNpcFates= {},
+            otherNpcFates= {
+                --{ fateName= "Could've Found Something Bigger", npcName= "Xbr'aal Hunter" }, 2 npcs names same thing....
+                { fateName= "Le Selva se lo Llevó", npcName= "Xbr'aal Hunter" },
+                { fateName= "Stabbing Gutward", npcName= "Doppro Spearbrother" },
+                --{ fateName= "Stick it to the Mantis", npcName= "Xbr'aal Sentry" }, -- 2 npcs named same thing.....
+                { fateName= "Porting Is Such Sweet Sorrow", npcName= "Hoobigo Porter" },
+            },
             bossFates= {
                 "Moths are Tough"
             },
             blacklistedFates= {
-                "The Departed"
+                "The Departed",
             }
         }
     },
@@ -605,9 +630,15 @@ FatesData = {
         fatesList= {
             collectionsFates= {
                 "Gonna Have Me Some Fur",
-                "The Serpentlord Sires" -- Br'uk Vaw of the Setting Sun
+                "The Serpentlord Sires", -- Br'uk Vaw of the Setting Sun
             },
             otherNpcFates= {
+                { fateName= "The Dead Never Die", npcName= "Tonawawtan Worker" },
+                { fateName= "Ain't What I Herd", npcName= "Hhetsarro Herder" },
+                { fateName= "Helms off to the Bull", npcName= "Hhetsarro Herder" },
+                { fateName= "A Raptor Runs Through It", npcName= "Hhetsarro Angler" },
+                { fateName= "The Serpentlord Suffers", npcName= "Br'uk Vaw of the Setting Sun" },
+                { fateName= "That's Me and the Porter", npcName= " Pelupelu Peddler" },
             },
             bossFates= {
                 "The Serpentlord Seethes",
@@ -707,9 +738,15 @@ if ExtractMateria == true then
         yield("/echo [FATE] Please Install YesAlready")
     end 
 end   
-if useBMR == true then
+if useBM == true then
     if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
-        yield("/echo [FATE] Please Install BossMod Reborn")
+        yield("/echo [FATE] Please Install BossMod")
+    else
+        if HasPlugin("BossModReborn") then
+            BMorBMR = "BMR"
+        else
+            BMorBMR = "BM"
+        end
     end
 end
 if not HasPlugin("ChatCoordinates") then
@@ -777,6 +814,46 @@ function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
     end
 end
 
+--simple function to check a time limit
+function timeout_check(start, length)
+    if os.clock() - start > length then
+        return true
+    end
+    return false
+end
+
+--Wrapper to dismount
+function Dismount()
+    local timeout_start = os.clock()
+
+    local playerPosition = {
+        x = GetPlayerRawXPos(),
+        y = GetPlayerRawYPos(),
+        z = GetPlayerRawZPos()
+    }
+
+    if PathIsRunning() or PathfindInProgress() then
+        yield("/vnav stop")
+    end
+
+    -- characters that are flying are also mounted
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        yield('/ac dismount')
+        repeat
+            yield("/wait ".. 1)
+            if GetCharacterCondition(CharacterCondition.flying) then
+                yield('/ac dismount')
+            end
+            -- as a last ditch effort quit trying to dismount and teleport
+            -- if timeout_check(timeout_start,15) then
+            --     TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
+            --     return
+            -- end
+            antistuck()
+        until not GetCharacterCondition(CharacterCondition.mounted)
+    end
+end
+
 function TeleportTo(aetheryteName)
     while EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp()) - LastTeleportTimeStamp < 5 do
         LogInfo("[FATE] Too soon since last teleport. Waiting...")
@@ -799,26 +876,17 @@ function TeleportTo(aetheryteName)
 end
 
 function Mount()
-    local max_retries = 10     -- Maximum number of retries
-    local retry_interval = 1.0 -- Time interval between retries in seconds
-    local retries = 0          -- Counter for the number of retries
-    if GetCharacterCondition(CharacterCondition.mounted) then
-        return
-    end
-    
-    while not IsInFate() and retries < max_retries do
-        if MountToUse == "mount roulette" then
-            yield('/gaction "mount roulette"')
-        else
-            yield('/mount "' .. MountToUse .. '"')
+    while not GetCharacterCondition(CharacterCondition.mounted) do
+        if not IsPlayerCasting() then
+            if MountToUse == "mount roulette" then
+                yield('/gaction "mount roulette"')
+            else
+                yield('/mount "' .. MountToUse)
+            end
+            yield("/wait ".. 0.1)
+            HandleUnexpectedCombat()
         end
-        yield("/wait " .. retry_interval)
-        if GetCharacterCondition(CharacterCondition.mounted) then
-            break
-        end
-        retries = retries + 1
     end
-    yield("/wait 0.1")
 end
 
 function HandleUnexpectedCombat()
@@ -1016,12 +1084,48 @@ function SelectNextFate()
     return nextFate
 end
 
+function random_direct()
+    --math.random will return -1,0,1 so i'm working around it to get only a -1 or 1 by making a table
+    local rng_dir = {-1,1}
+    return rng_dir[math.random(1,2)]
+end
+
+--Paths to the Fate NPC Starter
+function MoveToNPC(fate)
+
+    if HasTarget() and GetTargetName()==fate.npcName then
+        local npc_x = GetTargetRawXPos() + (3 * random_direct())
+        local npc_y = GetTargetRawYPos()
+        local npc_z = GetTargetRawZPos() + (3 * random_direct())
+
+        local i = 5
+        local nearestLandX = QueryMeshNearestPointX(npc_x,npc_y,npc_z,i,i)
+        local nearestLandY = QueryMeshNearestPointY(npc_x,npc_y,npc_z,i,i)
+        local nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,npc_z,i,i)
+
+        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
+    end
+
+end
+
 --Paths to the Fate
 function MoveToFate(nextFate)
     LogInfo("[FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
     yield("/echo [FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
+
+    local angle = math.random() * 2 * math.pi
+    local radius = 30 -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
+    local randomX = nextFate.x + radius / 2 * math.cos(angle)
+    local randomY = nextFate.y
+    local randomZ = nextFate.z + radius / 2 * math.sin(angle)
+
+    local i = 5
+    local nearestLandX = QueryMeshNearestPointX(randomX,randomY,randomZ,i,i)
+    local nearestLandY = QueryMeshNearestPointY(randomX,randomY,randomZ,i,i)
+    local nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,randomZ,i,i)
+
     if HasPlugin("ChatCoordinates") then
-        SetMapFlag(SelectedZone.zoneId, nextFate.x, nextFate.y, nextFate.z)
+        SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
     end
 
     local playerPosition = {
@@ -1039,18 +1143,12 @@ function MoveToFate(nextFate)
         end
     end
 
-    if HasFlightUnlocked(SelectedZone.zoneId) then
-        LogInfo("[FATE] Moving to "..nextFate.x..", "..nextFate.y..", "..nextFate.z)
+    if not IsInFate() then
+        LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
         yield("/vnavmesh stop")
         yield("/wait 1")
-        PathfindAndMoveTo(nextFate.x, nextFate.y, nextFate.z, true)
-    else
-        LogInfo("[FATE] Moving to "..nextFate.x..", "..nextFate.y..", "..nextFate.z)
-        yield("/vnavmesh stop")
-        yield("/wait 1")
-        PathfindAndMoveTo(nextFate.x, nextFate.y, nextFate.z)
+        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
     end
-    yield("/wait 2")
 end
 
 function IsFateActive(fateId)
@@ -1072,23 +1170,17 @@ function InteractWithFateNpc(fate)
         if not IsFateActive(fate.fateId) then
             break
         end
-
-        repeat -- break conditions in case someone snipes the interact before you
+        
+        -- if target is already selected earlier during pathing, avoids having to target and move again
+        while (not HasTarget() or GetTargetName()~=fate.npcName) and not IsInFate() and IsFateActive(fate.fateId) do
             yield("/echo [FATE] Searching for NPC target")
             -- PathfindAndMoveTo(target.x, target.y, target.z)
             -- yield("/target "..target.npcName)
             yield("/target "..fate.npcName)
             yield("/wait 1")
-        until (HasTarget() and GetTargetName()==fate.npcName) or IsInFate() or not IsFateActive(fate.fateId)
-
-        if not IsFateActive(fate.fateId) then
-            break
+            
+            MoveToNPC(fate)
         end
-
-        -- LogDebug("[FATE] Found fate NPC "..target.npcName..". Current distance: "..DistanceBetween(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), target.x, target.y, target.z))
-
-        yield("/lockon on")
-        yield("/automove")
 
         while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() and IsFateActive(fate.fateId) do -- break conditions in case someone snipes the interact before you
             yield("/wait 0.5")
@@ -1108,9 +1200,6 @@ function InteractWithFateNpc(fate)
             end
             yield("/wait 0.1")
         end
-        yield("/wait 1")
-        yield("/lockon off")
-        yield("/automove off")
         yield("/wait 1") -- wait to register
         while GetTargetName() == fate.npcName do
             ClearTarget()
@@ -1167,10 +1256,9 @@ function ChangeInstance()
             yield("/wait 1")
         end
 
-        while GetCharacterCondition(CharacterCondition.mounted) do
+        if GetCharacterCondition(CharacterCondition.mounted) then
             LogInfo("[FATE] Dismounting...")
-            yield("/gaction dismount")
-            yield("/wait 1")
+            Dismount()
         end
 
         yield("/lockon")
@@ -1223,11 +1311,7 @@ function TurnOnCombatMods()
     end
     yield("/wait 1")
 
-    if not bossModAIActive and useBMR then
-        yield("/bmrai on")
-        yield("/bmrai followtarget on")
-        yield("/bmrai followcombat on")
-        yield("/bmrai followoutofcombat on")
+    if not bossModAIActive and useBM then
 
         local ClassJob = GetClassJobId()
         local MaxDistance = MeleeDist --default to melee distance
@@ -1245,7 +1329,18 @@ function TurnOnCombatMods()
         then
             MaxDistance = RangedDist
         end
-        yield("/bmrai maxdistancetarget " .. MaxDistance)
+        if BMorBMR == "BMR" then
+            yield("/bmrai on")
+            yield("/bmrai followtarget on")
+            yield("/bmrai followcombat on")
+            yield("/bmrai followoutofcombat on")
+            yield("/bmrai maxdistancetarget " .. MaxDistance)
+        else
+            yield("/vbmai on")
+            --yield("/vbmai followtarget on")
+            --yield("/vbmai followcombat on")
+            --yield("/vbmai followoutofcombat on")
+        end
         bossModAIActive = true
     end
     yield("/wait 1")
@@ -1255,11 +1350,18 @@ function TurnOffCombatMods()
     -- no need to turn RSR off
 
     -- turn of BMR so you don't start engaging other mobs
-    if useBMR and bossModAIActive then
-        yield("/bmrai off")
-        yield("/bmrai followtarget off")
-        yield("/bmrai followcombat off")
-        yield("/bmrai followoutofcombat off")
+    if useBM and bossModAIActive then
+        if BMorBMR == "BMR" then
+            yield("/bmrai off")
+            yield("/bmrai followtarget off")
+            yield("/bmrai followcombat off")
+            yield("/bmrai followoutofcombat off")
+        else
+            yield("/vbmai off")
+            --yield("/vbmai followtarget off")
+            --yield("/vbmai followcombat off")
+            --yield("/vbmai followoutofcombat off")
+        end
         bossModAIActive = false
     end
 end
@@ -1293,9 +1395,9 @@ function antistuck()
     if PX == PXX and PY == PYY and PZ == PZZ then
         while GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
             LogInfo("[FATE] Looping antistuck")
-            local enemy_x = GetTargetRawXPos()
+            local enemy_x = GetTargetRawXPos() + (3 * random_direct())
             local enemy_y = GetTargetRawYPos()
-            local enemy_z = GetTargetRawZPos()
+            local enemy_z = GetTargetRawZPos() + (3 * random_direct())
             if PathIsRunning() == false and GetCharacterCondition(4, false) then 
                 LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
                 yield("/vnavmesh stop")
@@ -1498,6 +1600,7 @@ while true do
 
     ---------------------------- While vnavmesh is Moving ------------------------------
 
+    local fateNPCNav = false
     -- while vnavmesh is moving to a fate
     while PathIsRunning() or PathfindInProgress() and not IsInFate() do
         
@@ -1505,6 +1608,14 @@ while true do
         if GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.flying) and HasFlightUnlocked(SelectedZone.zoneId) then 
             yield("/gaction jump")
             yield("/wait 0.3")
+        end
+
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
+            yield("/target "..CurrentFate.npcName)
+            if HasTarget() and GetTargetName()==CurrentFate.npcName then
+                MoveToNPC(CurrentFate)
+                fateNPCNav = true
+            end
         end
 
         --Stops Moving to dead Fates or change paths to better fates
@@ -1519,44 +1630,34 @@ while true do
                 yield("/wait 1")
             end
         end
+    end
 
-        -- Stops Pathing when at or close to Fate, because navmesh sometimes can't get to distance 0
-        if PathIsRunning() then
-            if IsInFate() or
-               (IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 5) then
-                LogInfo("[FATE] Stopping nav, arrriving at fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
-                yield("/echo Arrived at fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
-                yield("/vnavmesh stop")
-                yield("/wait "..fatewait)
-                yield("/wait 1")
+    local timeout_start = os.clock()
+    --wait for path to complete
+    while (IsInFate() or (IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0)) and
+          PathIsRunning() and PathfindInProgress()
+    do
+        yield("/wait 0.1")
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
+            yield("/target "..CurrentFate.npcName)
+            if HasTarget() and GetTargetName()==CurrentFate.npcName then
+                MoveToNPC(CurrentFate)
+                fateNPCNav = true
             end
+        end
+        if timeout_check(timeout_start,10) then
+            yield("/vnav stop")
+            break
         end
     end
 
-    --Dismounting upon arriving at fate
-    while GetCharacterCondition(CharacterCondition.mounted) and
-          GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 20 and
-          (IsInFate() or (IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0))
-    do
-        yield("/echo [FATE] Arrived at fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
-        LogInfo("[FATE] Arrived at Fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
-        yield("/vnavmesh stop")
-        while GetCharacterCondition(CharacterCondition.mounted) do
-            if GetCharacterCondition(CharacterCondition.flying) then
-                yield("/gaction dismount") -- first dismount call only lands the mount
-                yield("/wait 3")
-                
-            end
-            yield("/gaction dismount") -- actually dismount
-            yield("/wait 1")
-            antistuck()
-        end
+    --Dismount
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        Dismount()
     end
 
     -- need to talk to npc to start fate
-    if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and
-       GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 20
-    then
+    if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 then
         InteractWithFateNpc(CurrentFate)
     else
         if not UsePandoraSync then
@@ -1574,22 +1675,20 @@ while true do
     while IsInFate() do
         GemAnnouncementLock = false
     
-        yield("/vnavmesh stop")
-        yield("/wait 1")
-        while GetCharacterCondition(CharacterCondition.mounted) do
-            yield("/gaction dismount")
-            yield("/wait 1")
+        if GetCharacterCondition(CharacterCondition.mounted) then
+            Dismount()
         end
 
         --Paths to enemys when Bossmod is disabled
-        if not useBMR then 
+        if not useBM then
             EnemyPathing()
+            yield("/vnavmesh stop")
+            yield("/wait 1")
         end
-        yield("/vnavmesh stop")
-        yield("/wait 1")
         AvailableFateCount = 0
         
         antistuck()
+
         if GetCharacterCondition(CharacterCondition.dead) then
             HandleDeath()
         end
