@@ -1105,6 +1105,13 @@ function MoveToNPC(fate)
         local nearestLandY = QueryMeshNearestPointY(npc_x,npc_y,npc_z,i,i)
         local nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,npc_z,i,i)
 
+        -- in case a point isn't able to be found default to npc
+        if nearestLandX == nil or nearestLandY == nil or nearestLandZ == nil then
+            nearestLandX = GetTargetRawXPos()
+            nearestLandY = GetTargetRawYPos()
+            nearestLandZ = GetTargetRawZPos()
+        end
+
         PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
     end
 
@@ -1116,7 +1123,8 @@ function MoveToFate(nextFate)
     yield("/echo [FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
 
     local angle = math.random() * 2 * math.pi
-    local radius = 30 -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
+    local radius = GetFateRadius(nextFate.fateId)
+    LogInfo("[FATE] Radius ".. radius)
     local randomX = nextFate.x + radius / 2 * math.cos(angle)
     local randomY = nextFate.y
     local randomZ = nextFate.z + radius / 2 * math.sin(angle)
@@ -1125,6 +1133,13 @@ function MoveToFate(nextFate)
     local nearestLandX = QueryMeshNearestPointX(randomX,randomY,randomZ,i,i)
     local nearestLandY = QueryMeshNearestPointY(randomX,randomY,randomZ,i,i)
     local nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,randomZ,i,i)
+
+    -- in case a point isn't able to be found default to fate location
+    if nearestLandX == nil or nearestLandY == nil or nearestLandZ == nil then
+        nearestLandX = nextFate.x
+        nearestLandY = nextFate.y
+        nearestLandZ = nextFate.z
+    end
 
     if HasPlugin("ChatCoordinates") then
         SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
@@ -1395,11 +1410,12 @@ function antistuck()
     end
 
     if PX == PXX and PY == PYY and PZ == PZZ then
-        while GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
+        -- noticed melee jobs tend to dance around if the antistuck distance is same as the melee distance so giving it 1.5y flex
+        while GetDistanceToTarget() > AntiStuckDist + 1.5 and stuck < 20 do
             LogInfo("[FATE] Looping antistuck")
-            local enemy_x = GetTargetRawXPos() + (3 * random_direct())
+            local enemy_x = GetTargetRawXPos() + (AntiStuckDist * random_direct())
             local enemy_y = GetTargetRawYPos()
-            local enemy_z = GetTargetRawZPos() + (3 * random_direct())
+            local enemy_z = GetTargetRawZPos() + (AntiStuckDist * random_direct())
             if PathIsRunning() == false and GetCharacterCondition(4, false) then 
                 LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
                 yield("/vnavmesh stop")
