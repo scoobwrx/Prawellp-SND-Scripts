@@ -8,9 +8,10 @@
 
   ***********
   * Version *
-  *  1.1.11  *
+  *  1.1.14  *
   ***********
-    -> 1.1.11   Skip retainer if Twist of Fate buff is up
+
+    -> 1.1.14   Update order of operations, removed random y
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -78,8 +79,8 @@ This Plugins are Optional and not needed unless you have it enabled in the setti
 
 --Teleport and Voucher
 EnableChangeInstance = true --should it Change Instance when there is no Fate (only works on DT fates)
-ShouldExchange = true             --should it Exchange Vouchers
-OldV = true                 --should it Exchange Old Vouchers
+ShouldExchange = false             --should it Exchange Vouchers
+OldV = false                 --should it Exchange Old Vouchers
 
 --Fate settings
 WaitIfBonusBuff = true          --Don't change instances if you have the Twist of Fate bonus buff
@@ -558,12 +559,12 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {
                 { fateName= "Pasture Expiration Date", npcName= "Tsivli Stoutstrider" },
-                -- { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
-                -- { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
+                { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
+                { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
                 { fateName= "Birds Up", npcName= "Coffee Farmer" },
                 { fateName= "Salty Showdown", npcName= "Chirwagur Sabreur" },
-                -- { fateName= "Fire Suppression", npcName= "Tsivli Stoutstrider" },
-                { fateName= "Wolf Parade", npcName= "Pelupelu Peddler" },
+                { fateName= "Fire Suppression", npcName= "Tsivli Stoutstrider" },
+                --{ fateName= "Wolf Parade", npcName= "Pelupelu Peddler" }, -- two npcs with same name unfortunately
             },
             bossFates= {
                 "Panaq Attack"
@@ -676,7 +677,9 @@ FatesData = {
                 "A Scythe to an Axe Fight",
                 "(Got My Eye) Set on You"
             },
-            blacklistedFates= {}
+            blacklistedFates= {
+                -- "Domo Arigato"
+            }
         }
     },
     {
@@ -794,7 +797,7 @@ setSNDProperty("StopMacroIfAddonNotVisible", false)
 ------------------------------Functions----------------------------------------------
 
 function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
-    teleportTimePenalty = 200 -- to account for how long teleport takes you
+    teleportTimePenalty = 50 -- to account for how long teleport takes you
 
     local aetheryteForClosestFate = nil
     local closestTravelDistance = GetDistanceToPoint(nextFate.x, nextFate.y, nextFate.z)
@@ -828,25 +831,15 @@ end
 function Dismount()
     local timeout_start = os.clock()
     local unable_to_dismount = false
-
-    local playerPosition = {
-        x = GetPlayerRawXPos(),
-        y = GetPlayerRawYPos(),
-        z = GetPlayerRawZPos()
-    }
-
     if PathIsRunning() or PathfindInProgress() then
         yield("/vnav stop")
     end
 
     -- characters that are flying are also mounted
     if GetCharacterCondition(CharacterCondition.mounted) then
-        yield('/ac dismount')
         repeat
-            yield("/wait ".. 1)
-            if GetCharacterCondition(CharacterCondition.flying) then
-                yield('/ac dismount')
-            end
+            yield('/ac dismount')
+            yield("/wait ".. 2)
             -- if still mounted after 10 seconds then stop trying
             if timeout_check(timeout_start,10) then
                 unable_to_dismount = true
@@ -905,6 +898,7 @@ function HandleUnexpectedCombat()
             yield("/battletarget")
         end
         yield("/wait 1")
+        HandleDeath()
     end
 
     if not GetCharacterCondition(CharacterCondition.inCombat) then
@@ -1098,34 +1092,41 @@ end
 
 --Paths to the Fate NPC Starter
 function MoveToNPC(fate)
-
-    if HasTarget() and GetTargetName()==fate.npcName then
+    LogInfo("MoveToNPC function")
+    if HasTarget() and GetTargetName()==fate.npcName and GetDistanceToTarget() > 5 then
         local npc_x = GetTargetRawXPos() + (3 * random_direct())
         local npc_y = GetTargetRawYPos()
         local npc_z = GetTargetRawZPos() + (3 * random_direct())
 
-        local i = 5
-        local nearestLandX = QueryMeshNearestPointX(npc_x,npc_y,npc_z,i,i)
-        local nearestLandY = QueryMeshNearestPointY(npc_x,npc_y,npc_z,i,i)
-        local nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,npc_z,i,i)
+        local xz_extent = 5
+        local y_extent = 5
+        local nearestLandX = QueryMeshNearestPointX(npc_x,npc_y,npc_z,xz_extent,y_extent)
+        if nearestLandX == nil then
+            nearestLandX = npc_x
+        end
 
-        --coffee farmer/ Birds up exception to land on the side of fence enemies spawn
+        local nearestLandZ = QueryMeshNearestPointZ(nearestLandX,npc_y,npc_z,xz_extent,y_extent)
+        if nearestLandZ == nil then
+            nearestLandZ = npc_z
+        end
+            --coffee farmer/ Birds up exception to land on the side of fence enemies spawn
         -- z -528 will be on right side of fence
         if fate.fateName == "Birds Up" then
-            nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,-530,i,i)
+            nearestLandZ = QueryMeshNearestPointZ(nearestLandX,npc_y,-530,xz_extent,y_extent)
+            if nearestLandZ == nil then
+                nearestLandZ = npc_z
+            end
             repeat
-                nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,-530,i,i)
+                nearestLandZ = QueryMeshNearestPointZ(nearestLandX,npc_y,-530,xz_extent,y_extent)
+                if nearestLandZ == nil then
+                    nearestLandZ = npc_z
+                end
             until nearestLandZ <= -528
         end
-
-        -- in case a point isn't able to be found default to npc
-        if nearestLandX == nil or nearestLandY == nil or nearestLandZ == nil then
-            nearestLandX = GetTargetRawXPos()
-            nearestLandY = GetTargetRawYPos()
-            nearestLandZ = GetTargetRawZPos()
+        if CharacterCondition.flying then
+            npc_y = npc_y + 5
         end
-
-        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
+        PathfindAndMoveTo(nearestLandX, npc_y, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
     end
 
 end
@@ -1137,34 +1138,54 @@ function MoveToFate(nextFate)
 
     local angle = math.random() * 2 * math.pi
     local radius = GetFateRadius(nextFate.fateId)
-    local randomX = nextFate.x + radius / 2 * math.cos(angle)
-    local randomY = nextFate.y
-    local randomZ = nextFate.z + radius / 2 * math.sin(angle)
+    local randomX = nextFate.x + ((radius/2) * math.cos(angle))
+    local randomY = nextFate.y + 15
+    local randomZ = nextFate.z + ((radius/2) * math.sin(angle))
 
-    local i = 5
-    local nearestLandX = QueryMeshNearestPointX(randomX,randomY,randomZ,i,i)
-    local nearestLandY = QueryMeshNearestPointY(randomX,randomY,randomZ,i,i)
-    local nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,randomZ,i,i)
+    LogInfo("[FATE] Math checks out")
+    LogInfo("[FATE] Fate location: "..nextFate.x..", "..nextFate.y..", "..nextFate.z)
+    LogInfo("[FATE] Random point: "..randomX..", "..randomY..", "..randomZ)
 
-    --coffee farmer/ Birds up exception to land on the side of fence enemies spawn
-    -- z -528 will be on right side of fence
-    if nextFate.fateName == "Birds Up" then
-        nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,-530,i,i)
-        repeat
-            nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,-530,i,i)
-        until nearestLandZ <= -528
+    -- fly towards middle, npc is going to be targeted and alter route anyway
+    if IsOtherNpcFate(nextFate.fateName) and CurrentFate.startTime == 0  then
+        randomX = nextFate.x
+        randomY = nextFate.y
+        randomZ = nextFate.z
     end
 
-    -- in case a point isn't able to be found default to fate location
-    if nearestLandX == nil or nearestLandY == nil or nearestLandZ == nil then
+    local xz_extent = 25
+    local y_extent = 5
+    nearestLandX = QueryMeshNearestPointX(randomX, randomY, randomZ,xz_extent,y_extent)
+    if nearestLandX == nil then
         nearestLandX = nextFate.x
-        nearestLandY = nextFate.y
-        nearestLandZ = nextFate.z
+        LogInfo("[FATE] nearestLandX set to fateX")
+    else
+        LogInfo("[FATE] nearestLandX is: "..nearestLandX)
     end
+    nearestLandZ = QueryMeshNearestPointZ(nearestLandX,randomY,randomZ,xz_extent,y_extent)
+    if nearestLandZ == nil then
+        nearestLandZ = nextFate.z
+        LogInfo("[FATE] nearestLandZ set to fateZ")
+    else
+        LogInfo("[FATE] nearestLandZ is: "..nearestLandZ)
+    end
+    nearestLandY = QueryMeshNearestPointY(nearestLandX,randomY,nearestLandZ,xz_extent,y_extent)
+    if nearestLandY == nil then
+        nearestLandY = randomY
+        LogInfo("[FATE] nearestLandY set to randomY")
+    else
+        nearestLandY = nearestLandY + 15
+        LogInfo("[FATE] nearestLandY is: "..nearestLandY)
+    end
+
+    LogInfo("[FATE] Queried nearest points")
+    LogInfo("[FATE] Nearest points are: "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
 
     if HasPlugin("ChatCoordinates") then
         SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
     end
+
+    LogInfo("[FATE] Generated random coordinates in fate: "..randomX..", "..randomY..", "..randomZ)
 
     local playerPosition = {
         x = GetPlayerRawXPos(),
@@ -1182,10 +1203,10 @@ function MoveToFate(nextFate)
     end
 
     if not IsInFate() then
-        LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
+        LogInfo("[FATE] Moving to "..nearestLandX..", "..nextFate.y..", "..nearestLandZ)
         yield("/vnavmesh stop")
         yield("/wait 1")
-        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
+        PathfindAndMoveTo(nearestLandX, randomY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
     end
 end
 
@@ -1201,7 +1222,6 @@ end
 
 function InteractWithFateNpc(fate)
     while not IsInFate() and IsFateActive(fate.fateId) do
-        yield("/wait 1")
 
         HandleUnexpectedCombat()
 
@@ -1212,41 +1232,55 @@ function InteractWithFateNpc(fate)
         -- if target is already selected earlier during pathing, avoids having to target and move again
         while (not HasTarget() or GetTargetName()~=fate.npcName) and not IsInFate() and IsFateActive(fate.fateId) do
             yield("/echo [FATE] Searching for NPC target")
+            LogInfo("[FATE] Searching for NPC target")
             -- PathfindAndMoveTo(target.x, target.y, target.z)
             -- yield("/target "..target.npcName)
             yield("/target "..fate.npcName)
-            yield("/wait 1")
-            
-            MoveToNPC(fate)
-        end
-
-        while HasTarget() and GetDistanceToTarget() > 5 and not IsInFate() and IsFateActive(fate.fateId) do -- break conditions in case someone snipes the interact before you
-            yield("/wait 0.5")
-        end
-        yield("/vnavmesh stop")
-        yield("/wait 1")
-
-        repeat -- break conditions in case someone snipes the interact before you
-            yield("/interact")
-            yield("/wait 1")
-        until IsAddonVisible("Talk") or IsInFate() or not IsFateActive(fate.fateId)
-        while GetCharacterCondition(CharacterCondition.occupied32) do
-            if IsAddonVisible("Talk") then
-                yield("/click Talk Click")
-            elseif IsAddonVisible("SelectYesno") then
-                yield("/callback SelectYesno true 0")
+            if GetDistanceToTarget() > 5 then
+                yield("/vnav stop")
+                yield("/wait 1")
+                MoveToNPC(fate)
             end
-            yield("/wait 0.1")
         end
-        yield("/wait 1") -- wait to register
-        while GetTargetName() == fate.npcName do
-            ClearTarget()
+
+        while HasTarget() and GetTargetName()==fate.npcName and not IsInFate() and IsFateActive(fate.fateId) and CurrentFate.startTime == 0 do -- break conditions in case someone snipes the interact before you
+            LogInfo("[FATE] Inside interact Loop")
             yield("/wait 1")
+            if not PathIsRunning() and GetDistanceToTarget() > 5 then
+                LogInfo("[FATE] NPC too far away executing MoveToNPC")
+                yield("/vnav stop")
+                yield("/wait 1")
+                MoveToNPC(fate)
+            end
+            if not IsAddonVisible("Talk") and not IsAddonVisible("SelectYesno") and not IsInFate() and IsFateActive(fate.fateId) and not PathIsRunning() then
+                LogInfo("[FATE] Inside talk to npc")
+                yield("/target "..fate.npcName)
+                yield("/wait 1")
+                yield("/interact")
+                yield("/wait 1")
+                while GetCharacterCondition(CharacterCondition.occupied32) do
+                    LogInfo("Occupied by NPC")
+                    if IsAddonVisible("Talk") then
+                        yield("/click Talk Click")
+                    elseif IsAddonVisible("SelectYesno") then
+                        yield("/callback SelectYesno true 0")
+                    end
+                    yield("/wait 0.5")
+                end
+                yield("/wait 1") -- wait to register
+                while GetTargetName() == fate.npcName do
+                    LogInfo("Attempting to clear target.")
+                    ClearTarget()
+                    yield("/wait 1")
+                end
+            end
         end
+        yield("/wait 2")
     end
     yield("/wait 1")
     yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
     yield("/echo [FATE] Fate begun")
+    yield("/wait "..fatewait)
     LogInfo("[FATE] Exiting InteractWithFateNpc")
 end
 
@@ -1346,7 +1380,7 @@ function RangedJob()
         ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
         ClassJob == 31 or -- Machinist
         ClassJob == 33 or -- Astrologian
-        ClassJob == 35 or -- Red Mage
+        --ClassJob == 35 or -- Red Mage
         ClassJob == 38 or -- Dancer
         ClassJob == 40 or -- Sage
         ClassJob == 42 then -- Pictomancer
@@ -1361,11 +1395,14 @@ function TurnOnCombatMods()
     yield("/rotation manual")
     Class = GetClassJobId()
     
+    --[[
     if Class == 21 or Class == 37 or Class == 19 or Class == 32 or Class == 24 then -- white mage holy OP, or tank classes
         yield("/rotation settings aoetype 2") -- aoe
     else
         yield("/rotation settings aoetype 1") -- cleave
     end
+    --]]
+    yield("/rotation settings aoetype 2")
     yield("/wait 1")
 
     if not bossModAIActive and useBM then
@@ -1442,19 +1479,19 @@ function antistuck()
                     local enemy_z = GetTargetRawZPos() + (AntiStuckDist * random_direct())
 
                     local nearestX = QueryMeshNearestPointX(enemy_x,enemy_y,enemy_z,5,5)
-                    local nearestY = QueryMeshNearestPointY(enemy_x,enemy_y,enemy_z,5,5)
-                    local nearestZ = QueryMeshNearestPointZ(enemy_x,enemy_y,enemy_z,5,5)
-
-                    if nearestX == nil or nearestY == nil or nearestZ == nil then
+                    if nearestX == nil then
                         nearestX = enemy_x
-                        nearestY = enemy_y
-                        nearestZ = enemy_z
                     end
 
-                    LogInfo("[FATE] Moving to enemy "..nearestX..", "..nearestY..", "..nearestZ)
+                    local nearestZ = QueryMeshNearestPointZ(enemy_x,enemy_y,enemy_z,5,5)
+                    if nearestZ == nil then
+                        nearestZ = nearestZ
+                    end
+
+                    LogInfo("[FATE] Moving to enemy "..nearestX..", "..enemy_y..", "..nearestZ)
                     yield("/vnavmesh stop")
                     yield("/wait 1")
-                    PathfindAndMoveTo(nearestX, nearestY, nearestZ, GetCharacterCondition(CharacterCondition.flying))
+                    PathfindAndMoveTo(nearestX, enemy_y, nearestZ, GetCharacterCondition(CharacterCondition.flying))
                 end
                 yield("/wait 0.5")
                 stuck = stuck + 1
@@ -1660,6 +1697,8 @@ while true do
         if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
             yield("/target "..CurrentFate.npcName)
             if HasTarget() and GetTargetName()==CurrentFate.npcName then
+                yield("/vnav stop")
+                yield("/wait 1")
                 MoveToNPC(CurrentFate)
                 fateNPCNav = true
             end
@@ -1688,6 +1727,8 @@ while true do
         if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
             yield("/target "..CurrentFate.npcName)
             if HasTarget() and GetTargetName()==CurrentFate.npcName then
+                yield("/vnav stop")
+                yield("/wait 1")
                 MoveToNPC(CurrentFate)
                 fateNPCNav = true
             end
@@ -1734,7 +1775,7 @@ while true do
         end
         AvailableFateCount = 0
         
-        antistuck()
+        --antistuck()
 
         if GetCharacterCondition(CharacterCondition.dead) then
             HandleDeath()
@@ -1743,6 +1784,7 @@ while true do
         -- switches to targeting forlorns for bonus (if present)
         yield("/target Forlorn Maiden")
         yield("/target The Forlorn")
+        yield("/wait 1")
     end
 
     --Disables bossmod when the fate is over
@@ -1785,6 +1827,10 @@ while true do
                 LogInfo("[FATE] Extracting materia...")
                 if not IsAddonVisible("Materialize") then
                     yield("/generalaction \"Materia Extraction\"")
+                    yield("/wait 0.5")
+                end
+                while not IsAddonVisible("Materialize") do
+                    yield("/wait 0.5")
                 end
                 yield("/pcall Materialize true 2")
                 yield("/wait 0.5")
@@ -1870,7 +1916,7 @@ while true do
             end
             end
         
-            while ARRetainersWaitingToBeProcessed() == true do
+            while ARRetainersWaitingToBeProcessed() do
                 yield("/wait 1")
             end
 
@@ -1880,7 +1926,7 @@ while true do
             yield("/wait 1")
             yield("/callback RetainerList true -1")
             yield("/wait 1")
-            if IsAddonVisible("RetainerList") then
+            while IsAddonVisible("RetainerList") do
                 yield("/callback RetainerList true -1")
                 yield("/wait 1")
             end
