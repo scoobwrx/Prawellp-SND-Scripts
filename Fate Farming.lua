@@ -84,10 +84,10 @@ OldV = false                 --should it Exchange Old Vouchers
 
 --Fate settings
 WaitIfBonusBuff = true          --Don't change instances if you have the Twist of Fate bonus buff
-CompletionToIgnoreFate = 80     --Percent above which to ignore fate
+CompletionToIgnoreFate = 90     --Percent above which to ignore fate
 MinTimeLeftToIgnoreFate = 3*60  --Seconds below which to ignore fate
 JoinBossFatesIfActive = true    --Join boss fates if someone is already working on it (to avoid soloing long boss fates). If false, avoid boss fates entirely.
-CompletionToJoinBossFate = 20   --Percent above which to join boss fate
+CompletionToJoinBossFate = 0   --Percent above which to join boss fate
 fatewait = 0                    --the amount how long it should when before dismounting (0 = at the beginning of the fate 3-5 = should be in the middle of the fate)
 useBM = true                   --if you want to use the BossMod dodge/follow mode
 BMorBMR = "BMR"
@@ -102,7 +102,7 @@ RangedDist = 20                 --distance for BMRAI ranged
 --Utilities
 RepairAmount = 20          --the amount it needs to drop before Repairing (set it to 0 if you don't want it to repaier. onky supports self repair)
 ExtractMateria = true      --should it Extract Materia
-Food = ""                  --Leave "" Blank if you don't want to use any food
+Food = "Moqueca <hq>"                  --Leave "" Blank if you don't want to use any food
                            --if its HQ include <hq> next to the name "Baked Eggplant <hq>"
 
 --Retainer
@@ -144,7 +144,7 @@ CharacterCondition = {
     transition=45,
     jumping=48,
     mounting=64,
-    flying=77
+    flying=77,
 }
 
 
@@ -761,10 +761,10 @@ end
 --Chocobo settings
 if ChocoboS == true then
     PandoraSetFeatureState("Auto-Summon Chocobo", true) 
-    PandoraSetFeatureConfigState("Auto-Summon Chocobo", "Use whilst in combat", true)
+    PandoraSetFeatureConfigState("Auto-Summon Chocobo", "UseInCombat", true)
 elseif ChocoboS == false then
     PandoraSetFeatureState("Auto-Summon Chocobo", false) 
-    PandoraSetFeatureConfigState("Auto-Summon Chocobo", "Use whilst in combat", false)
+    PandoraSetFeatureConfigState("Auto-Summon Chocobo", "UseInCombat", false)
 end
 
 --Fate settings
@@ -832,14 +832,14 @@ function Dismount()
     local timeout_start = os.clock()
     local unable_to_dismount = false
     if PathIsRunning() or PathfindInProgress() then
-        yield("/vnav stop")
+        PathStop()
     end
 
     -- characters that are flying are also mounted
     if GetCharacterCondition(CharacterCondition.mounted) then
         repeat
             yield('/ac dismount')
-            yield("/wait ".. 2)
+            yield("/wait ".. 0.5)
             -- if still mounted after 10 seconds then stop trying
             if timeout_check(timeout_start,10) then
                 unable_to_dismount = true
@@ -854,12 +854,10 @@ function Dismount()
 end
 
 function TeleportTo(aetheryteName)
-    while EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp()) - LastTeleportTimeStamp < 5 do
-        LogInfo("[FATE] Too soon since last teleport. Waiting...")
-        yield("/wait 5")
-    end
 
-    yield("/tp "..aetheryteName)
+    if not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) then
+        yield("/tp "..aetheryteName)
+    end
     yield("/wait 1") -- wait for casting to begin
     while GetCharacterCondition(CharacterCondition.casting) do
         LogInfo("[FATE] Casting teleport...")
@@ -871,7 +869,6 @@ function TeleportTo(aetheryteName)
         yield("/wait 1")
     end
     yield("/wait 3")
-    LastTeleportTimeStamp = EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp())
 end
 
 function Mount()
@@ -1020,6 +1017,11 @@ function SelectNextFate()
     for i = 0, fates.Count-1 do
         local tempFate = {
             fateId = fates[i],
+            fateEventItem = GetFateEventItem(fates[i]),
+            fateIconId = GetFateIconId(fates[i]),
+            fateLevel = GetFateLevel(fates[i]),
+            fateMaxLevel = GetFateMaxLevel(fates[i]),
+            fateChain = GetFateChain(fates[i]),
             fateName = GetFateName(fates[i]),
             progress = GetFateProgress(fates[i]),
             duration = GetFateDuration(fates[i]),
@@ -1031,6 +1033,7 @@ function SelectNextFate()
         }
         tempFate.npcName = GetFateNpcName(tempFate.fateName)
         LogInfo("[FATE] Considering fate #"..tempFate.fateId.." "..tempFate.fateName)
+        LogInfo("[FATE] Fate Event Item: "..tempFate.fateEventItem)
 
         local currentTime = EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp())
         if tempFate.startTime == 0 then
@@ -1074,12 +1077,13 @@ function SelectNextFate()
     LogInfo("[FATE] Finished considering all fates")
 
     if nextFate == nil then
-        LogInfo("[FATE] No eligible fates found.")
-        yield("/echo [FATE] No eligible fates found.")
+        if not PathIsRunning() and not PathfindInProgress() then
+            LogInfo("[FATE] No eligible fates found.")
+            yield("/echo [FATE] No eligible fates found.")
+        end
     else
         LogInfo("[FATE] Final selected fate #"..nextFate.fateId.." "..nextFate.fateName)
     end
-    yield("/wait 1")
 
     return nextFate
 end
@@ -1091,12 +1095,13 @@ function random_direct()
 end
 
 --Paths to the Fate NPC Starter
-function MoveToNPC(fate)
-    LogInfo("MoveToNPC function")
-    if HasTarget() and GetTargetName()==fate.npcName and GetDistanceToTarget() > 5 then
-        local npc_x = GetTargetRawXPos() + (3 * random_direct())
+function MoveToTarget(fate)
+    LogInfo("MoveToTarget function")
+    local meleetargdist = GetTargetHitboxRadius() + MeleeDist
+    if HasTarget() and GetDistanceToTarget() > meleetargdist then
+        local npc_x = GetTargetRawXPos() + (meleetargdist * random_direct())
         local npc_y = GetTargetRawYPos()
-        local npc_z = GetTargetRawZPos() + (3 * random_direct())
+        local npc_z = GetTargetRawZPos() + (meleetargdist * random_direct())
 
         local xz_extent = 5
         local y_extent = 5
@@ -1110,21 +1115,35 @@ function MoveToNPC(fate)
             nearestLandZ = npc_z
         end
             --coffee farmer/ Birds up exception to land on the side of fence enemies spawn
-        -- z -528 will be on right side of fence
-        if fate.fateName == "Birds Up" then
-            nearestLandZ = QueryMeshNearestPointZ(nearestLandX,npc_y,-530,xz_extent,y_extent)
-            if nearestLandZ == nil then
-                nearestLandZ = npc_z
-            end
-            repeat
+            -- z -528 will be on right side of fence
+            -- 84 or greater for Gust Stop Already
+        if GetTargetName()==fate.npcName then
+            if fate.fateName == "Birds Up" then
                 nearestLandZ = QueryMeshNearestPointZ(nearestLandX,npc_y,-530,xz_extent,y_extent)
                 if nearestLandZ == nil then
                     nearestLandZ = npc_z
                 end
-            until nearestLandZ <= -528
+                repeat
+                    nearestLandZ = QueryMeshNearestPointZ(nearestLandX,npc_y,-530,xz_extent,y_extent)
+                    if nearestLandZ == nil then
+                        nearestLandZ = npc_z
+                    end
+                until nearestLandZ <= -528
+            elseif fate.fateName == "Gust Stop Already" then
+                nearestLandZ = QueryMeshNearestPointZ(nearestLandX,npc_y,84,xz_extent,y_extent)
+                if nearestLandZ == nil then
+                    nearestLandZ = npc_z
+                end
+                repeat
+                    nearestLandZ = QueryMeshNearestPointZ(nearestLandX,npc_y,84,xz_extent,y_extent)
+                    if nearestLandZ == nil then
+                        nearestLandZ = npc_z
+                    end
+                until nearestLandZ >= 84
+            end
         end
-        if CharacterCondition.flying then
-            npc_y = npc_y + 5
+        if GetCharacterCondition(CharacterCondition.flying) then
+            npc_y = npc_y + 3
         end
         PathfindAndMoveTo(nearestLandX, npc_y, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
     end
@@ -1204,8 +1223,7 @@ function MoveToFate(nextFate)
 
     if not IsInFate() then
         LogInfo("[FATE] Moving to "..nearestLandX..", "..nextFate.y..", "..nearestLandZ)
-        yield("/vnavmesh stop")
-        yield("/wait 1")
+        PathStop()
         PathfindAndMoveTo(nearestLandX, randomY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
     end
 end
@@ -1221,36 +1239,29 @@ function IsFateActive(fateId)
 end
 
 function InteractWithFateNpc(fate)
-    while not IsInFate() and IsFateActive(fate.fateId) do
+    while not IsInFate() and IsFateActive(fate.fateId) and CurrentFate.startTime == 0 do
 
         HandleUnexpectedCombat()
 
-        if not IsFateActive(fate.fateId) then
+        if not IsFateActive(fate.fateId) or CurrentFate.startTime ~= 0 then
             break
         end
         
         -- if target is already selected earlier during pathing, avoids having to target and move again
-        while (not HasTarget() or GetTargetName()~=fate.npcName) and not IsInFate() and IsFateActive(fate.fateId) do
+        while (not HasTarget() or GetTargetName()~=fate.npcName) and not IsInFate() and IsFateActive(fate.fateId) and CurrentFate.startTime == 0 do
             yield("/echo [FATE] Searching for NPC target")
             LogInfo("[FATE] Searching for NPC target")
-            -- PathfindAndMoveTo(target.x, target.y, target.z)
-            -- yield("/target "..target.npcName)
             yield("/target "..fate.npcName)
-            if GetDistanceToTarget() > 5 then
-                yield("/vnav stop")
-                yield("/wait 1")
-                MoveToNPC(fate)
+            if HasTarget() and not PathIsRunning() and not PathfindInProgress() and GetDistanceToTarget() > GetTargetHitboxRadius() + 5 then
+                MoveToTarget(fate)
             end
         end
 
         while HasTarget() and GetTargetName()==fate.npcName and not IsInFate() and IsFateActive(fate.fateId) and CurrentFate.startTime == 0 do -- break conditions in case someone snipes the interact before you
             LogInfo("[FATE] Inside interact Loop")
-            yield("/wait 1")
-            if not PathIsRunning() and GetDistanceToTarget() > 5 then
-                LogInfo("[FATE] NPC too far away executing MoveToNPC")
-                yield("/vnav stop")
-                yield("/wait 1")
-                MoveToNPC(fate)
+            if not PathIsRunning() and not PathfindInProgress() and GetDistanceToTarget() > GetTargetHitboxRadius() + 5 then
+                LogInfo("[FATE] NPC too far away executing MoveToTarget")
+                MoveToTarget(fate)
             end
             if not IsAddonVisible("Talk") and not IsAddonVisible("SelectYesno") and not IsInFate() and IsFateActive(fate.fateId) and not PathIsRunning() then
                 LogInfo("[FATE] Inside talk to npc")
@@ -1274,13 +1285,14 @@ function InteractWithFateNpc(fate)
                     yield("/wait 1")
                 end
             end
+            yield("/wait 1")
         end
-        yield("/wait 2")
+        yield("/wait 1")
     end
     yield("/wait 1")
-    yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
-    yield("/echo [FATE] Fate begun")
-    yield("/wait "..fatewait)
+    if not IsLevelSync() and GetPlayerLevel() > fate.fateMaxLevel then
+        yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
+    end
     LogInfo("[FATE] Exiting InteractWithFateNpc")
 end
 
@@ -1354,23 +1366,6 @@ function ChangeInstance()
     yield("/wait 3")
 end
 
-function AvoidEnemiesWhileFlying()
-    --If you get attacked it flies up
-    if GetCharacterCondition(CharacterCondition.inCombat) then
-        Name = GetCharacterName()
-        PlocX = GetPlayerRawXPos(Name)
-        PlocY = GetPlayerRawYPos(Name)+40
-        PlocZ = GetPlayerRawZPos(Name)
-        yield("/gaction jump")
-        yield("/wait 0.5")
-        yield("/vnavmesh stop")
-        yield("/wait 1")
-        PathfindAndMoveTo(PlocX, PlocY, PlocZ, true)
-        PathStop()
-        yield("/wait 2")
-    end
-end
-
 function RangedJob()
     local ClassJob = GetClassJobId()
 
@@ -1380,7 +1375,7 @@ function RangedJob()
         ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
         ClassJob == 31 or -- Machinist
         ClassJob == 33 or -- Astrologian
-        --ClassJob == 35 or -- Red Mage
+        ClassJob == 35 or -- Red Mage
         ClassJob == 38 or -- Dancer
         ClassJob == 40 or -- Sage
         ClassJob == 42 then -- Pictomancer
@@ -1403,7 +1398,6 @@ function TurnOnCombatMods()
     end
     --]]
     yield("/rotation settings aoetype 2")
-    yield("/wait 1")
 
     if not bossModAIActive and useBM then
 
@@ -1427,7 +1421,6 @@ function TurnOnCombatMods()
         end
         bossModAIActive = true
     end
-    yield("/wait 1")
 end
 
 function TurnOffCombatMods()
@@ -1489,7 +1482,7 @@ function antistuck()
                     end
 
                     LogInfo("[FATE] Moving to enemy "..nearestX..", "..enemy_y..", "..nearestZ)
-                    yield("/vnavmesh stop")
+                    PathStop()
                     yield("/wait 1")
                     PathfindAndMoveTo(nearestX, enemy_y, nearestZ, GetCharacterCondition(CharacterCondition.flying))
                 end
@@ -1497,7 +1490,7 @@ function antistuck()
                 stuck = stuck + 1
             end
             if stuck >= 20 then
-                yield("/vnavmesh stop")
+                PathStop()
                 yield("/wait 1")
             end
             stuck = 0
@@ -1560,7 +1553,7 @@ function PurchaseBicolorVouchers(bicolorGemCount)
             yield("/target "..npcName)
             yield("/wait 1")
         end
-        yield("/vnav stop")
+        PathStop()
         yield("/interact")
         yield("/wait 1")
         while not IsAddonVisible("ShopExchangeCurrency") do
@@ -1634,29 +1627,10 @@ while true do
         yield("/echo [FATE] Teleporting to "..teleport.." and resuming FATE farm.")
         TeleportTo(teleport)
     end
-
-    --food usage
-    if not (GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition)) then
-        if not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) then
-            while not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) do
-                while GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition) do
-                    yield("/wait 1")
-                end
-                yield("/item " .. Food)
-                yield("/wait 2")
-                FoodCheck = FoodCheck + 1
-            end
-            if FoodCheck >= 10 then
-                yield("/echo [FATE] no Food left <se.1>")
-            end
-            if HasStatusId(48) then
-                FoodCheck = 0
-            end
-        end
-    end
-
     
     ---------------------------Select and Move to Fate--------------------------------------
+    ---TargetClosestEnemy(distance value)
+    ---GetTargetFateID() - returns 0 if not fate target
 
     CurrentFate = SelectNextFate() -- init first fate object
 
@@ -1685,8 +1659,9 @@ while true do
     ---------------------------- While vnavmesh is Moving ------------------------------
 
     local fateNPCNav = false
+    local fateEnemyNav = false
     -- while vnavmesh is moving to a fate
-    while PathIsRunning() or PathfindInProgress() and not IsInFate() do
+    while (PathIsRunning() or PathfindInProgress()) and not IsInFate() do
         
         -- if mounted on land, jump to fly
         if GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.flying) and HasFlightUnlocked(SelectedZone.zoneId) then 
@@ -1694,13 +1669,21 @@ while true do
             yield("/wait 0.3")
         end
 
-        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 75 + GetFateRadius(CurrentFate.fateId) and not fateNPCNav then
             yield("/target "..CurrentFate.npcName)
             if HasTarget() and GetTargetName()==CurrentFate.npcName then
-                yield("/vnav stop")
-                yield("/wait 1")
-                MoveToNPC(CurrentFate)
+                --PathStop()
+                MoveToTarget(CurrentFate)
                 fateNPCNav = true
+            end
+        elseif GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 75 + GetFateRadius(CurrentFate.fateId) and not fateEnemyNav then
+            LogInfo("[Fate] Targeting closest enemey")
+            TargetClosestEnemy(75)
+            LogInfo("[Fate] Fate target ID: "..GetTargetFateID())
+            if HasTarget() and GetTargetFateID() > 0 then
+                --PathStop()
+                MoveToTarget(CurrentFate)
+                fateEnemyNav = true
             end
         end
 
@@ -1708,33 +1691,41 @@ while true do
         NextFate = SelectNextFate()
         if NextFate~=nil and CurrentFate.fateId ~= NextFate.fateId then
             yield("/echo [FATE] Stopped pathing to #"..CurrentFate.fateId.." "..CurrentFate.fateName..", higher priority fate found: #"..NextFate.fateId.." "..NextFate.fateName)
-            yield("/vnavmesh stop")
-            yield("/wait 1")
+            PathStop()
             CurrentFate = NextFate
             if not PathIsRunning() then
                 MoveToFate(CurrentFate)
-                yield("/wait 1")
             end
         end
+
+        yield("/wait 1")
     end
 
     local timeout_start = os.clock()
     --wait for path to complete
     while (IsInFate() or (IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0)) and
-          PathIsRunning() and PathfindInProgress()
+          (PathIsRunning() or PathfindInProgress())
     do
         yield("/wait 0.1")
-        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 75 + GetFateRadius(CurrentFate.fateId) and not fateNPCNav then
             yield("/target "..CurrentFate.npcName)
             if HasTarget() and GetTargetName()==CurrentFate.npcName then
-                yield("/vnav stop")
-                yield("/wait 1")
-                MoveToNPC(CurrentFate)
+                --PathStop()
+                MoveToTarget(CurrentFate)
                 fateNPCNav = true
+            end
+        elseif IsInFate() and not fateEnemyNav then
+            LogInfo("[Fate] Targeting closest enemey")
+            TargetClosestEnemy(75)
+            LogInfo("[Fate] Fate target ID: "..GetTargetFateID())
+            if HasTarget() and GetTargetFateID() > 0 then
+                --PathStop()
+                MoveToTarget(CurrentFate)
+                fateEnemyNav = true
             end
         end
         if timeout_check(timeout_start,10) then
-            yield("/vnav stop")
+            PathStop()
             break
         end
     end
@@ -1748,7 +1739,7 @@ while true do
     if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 then
         InteractWithFateNpc(CurrentFate)
     else
-        if not UsePandoraSync then
+        if not UsePandoraSync and not IsLevelSync() and GetPlayerLevel() > CurrentFate.fateMaxLevel then
             yield("/lsync")
         end
     end
@@ -1770,8 +1761,7 @@ while true do
         --Paths to enemys when Bossmod is disabled
         if not useBM then
             EnemyPathing()
-            yield("/vnavmesh stop")
-            yield("/wait 1")
+            PathStop()
         end
         AvailableFateCount = 0
         
@@ -1782,8 +1772,10 @@ while true do
         end
 
         -- switches to targeting forlorns for bonus (if present)
-        yield("/target Forlorn Maiden")
-        yield("/target The Forlorn")
+        if not HasTarget() or (HasTarget() and GetTargetName() ~= 'Forlorn Maiden' and GetTargetName() ~= 'The Forlorn') then
+            yield("/target Forlorn Maiden")
+            yield("/target The Forlorn")
+        end
         yield("/wait 1")
     end
 
@@ -1795,8 +1787,28 @@ while true do
     -----------------------------After Fate------------------------------------------
     HandleUnexpectedCombat()
 
+    --food usage
+    if not (GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition)) then
+        if not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) then
+            while not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) do
+                while GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition) do
+                    yield("/wait 1")
+                end
+                yield("/item " .. Food)
+                yield("/wait 2")
+                FoodCheck = FoodCheck + 1
+            end
+            if FoodCheck >= 10 then
+                yield("/echo [FATE] no Food left <se.1>")
+            end
+            if HasStatusId(48) then
+                FoodCheck = 0
+            end
+        end
+    end
+
     --Repair function
-    if RepairAmount > 0 and not GetCharacterCondition(CharacterCondition.mounted) then
+    if RepairAmount > 0 and not GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.inCombat) then
         if NeedsRepair(RepairAmount) then
             while not IsAddonVisible("Repair") do
                 LogInfo("[FATE] Opening repair menu...")
@@ -1819,11 +1831,11 @@ while true do
     end
 
     --Materia Extraction function
-    if ExtractMateria and not GetCharacterCondition(CharacterCondition.mounted) then
+    if ExtractMateria and not GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.inCombat) then
         if CanExtractMateria(100) then
             yield("/generalaction \"Materia Extraction\"")
             yield("/waitaddon Materialize")
-            while CanExtractMateria(100) == true and GetInventoryFreeSlotCount() > 1 do
+            while CanExtractMateria(100) == true and GetInventoryFreeSlotCount() > 1 and not GetCharacterCondition(CharacterCondition.inCombat) do
                 LogInfo("[FATE] Extracting materia...")
                 if not IsAddonVisible("Materialize") then
                     yield("/generalaction \"Materia Extraction\"")
@@ -1941,7 +1953,7 @@ while true do
                     yield("/deliveroo enable")
                 end
                 if DeliverooIsTurnInRunning() then
-                    yield("/vnavmesh stop")
+                    PathStop()
                 end
                 while DeliverooIsTurnInRunning() do
                     yield("/wait 1")
