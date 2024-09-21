@@ -1290,7 +1290,7 @@ function InteractWithFateNpc(fate)
         yield("/wait 1")
     end
     yield("/wait 1")
-    if not IsLevelSync() and GetPlayerLevel() > fate.fateMaxLevel then
+    if not IsLevelSynced() and GetLevel() > fate.fateMaxLevel then
         yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
     end
     LogInfo("[FATE] Exiting InteractWithFateNpc")
@@ -1575,6 +1575,183 @@ function PurchaseBicolorVouchers(bicolorGemCount)
     end
 end
 
+function CheckNonCombatToDos()
+    --food usage
+    if not (GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition)) then
+        if not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) then
+            while not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) do
+                while GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition) do
+                    yield("/wait 1")
+                end
+                yield("/item " .. Food)
+                yield("/wait 2")
+                FoodCheck = FoodCheck + 1
+            end
+            if FoodCheck >= 10 then
+                yield("/echo [FATE] no Food left <se.1>")
+            end
+            if HasStatusId(48) then
+                FoodCheck = 0
+            end
+        end
+    end
+
+    --Repair function
+    if RepairAmount > 0 and not GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.inCombat) then
+        if NeedsRepair(RepairAmount) then
+            while not IsAddonVisible("Repair") do
+                LogInfo("[FATE] Opening repair menu...")
+                yield("/generalaction repair")
+                yield("/wait 0.5")
+            end
+            yield("/callback Repair true 0")
+            yield("/wait 0.1")
+            if IsAddonVisible("SelectYesno") then
+                yield("/callback SelectYesno true 0")
+                yield("/wait 0.1")
+            end
+            while GetCharacterCondition(CharacterCondition.occupied39) do
+                LogInfo("[FATE] Repairing...")
+                yield("/wait 1")
+            end
+            yield("/wait 1")
+            yield("/callback Repair true -1")
+        end
+    end
+
+    --Materia Extraction function
+    if ExtractMateria and not GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.inCombat) then
+        if CanExtractMateria(100) then
+            yield("/generalaction \"Materia Extraction\"")
+            yield("/waitaddon Materialize")
+            while CanExtractMateria(100) == true and GetInventoryFreeSlotCount() > 1 and not GetCharacterCondition(CharacterCondition.inCombat) do
+                LogInfo("[FATE] Extracting materia...")
+                if not IsAddonVisible("Materialize") then
+                    yield("/generalaction \"Materia Extraction\"")
+                    yield("/wait 0.5")
+                end
+                while not IsAddonVisible("Materialize") do
+                    yield("/wait 0.5")
+                end
+                yield("/pcall Materialize true 2")
+                yield("/wait 0.5")
+                if IsAddonVisible("MaterializeDialog") then
+                    yield("/pcall MaterializeDialog true 0")
+                    yield("/wait 0.1")
+                end
+                while GetCharacterCondition(39) do
+                    yield("/wait 0.5")
+                end
+            end
+            yield("/wait 1")
+            yield("/pcall Materialize true -1")
+            yield("/echo [FATE] Extracted all materia")
+            yield("/wait 1")
+        end
+    end
+
+    if CanExtractMateria(100) and Extract and not GetCharacterCondition(CharacterCondition.casting) then
+        yield("/generalaction \"Materia Extraction\"")
+        yield("/waitaddon Materialize")
+        while CanExtractMateria(100) == true and not GetCharacterCondition(CharacterCondition.casting) and GetInventoryFreeSlotCount() > 1 do
+            LogInfo("[FATE] Extracting materia 2...")
+            if not IsAddonVisible("Materialize") then
+                yield("/generalaction \"Materia Extraction\"")
+            end
+                yield("/pcall Materialize true 2")
+                yield("/wait 0.5")
+            if IsAddonVisible("MaterializeDialog") then
+                yield("/pcall MaterializeDialog true 0")
+                yield("/wait 0.1")
+            end
+            while GetCharacterCondition(39) do
+                yield("/wait 0.5")
+            end
+        end
+        yield("/wait 1")
+        yield("/pcall Materialize true -1")
+        yield("/echo [FATE] Extracted all materia")
+        yield("/wait 1")
+    end
+
+    --Retainer Process
+    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) and
+       (not WaitIfBonusBuff or not (HasStatusId(1288) or HasStatusId(1289))) then
+        LogInfo("[FATE] Handling retainers...")
+        if ARRetainersWaitingToBeProcessed() == true then
+            while not IsInZone(129) do
+                TeleportTo("Limsa Lominsa Lower Decks")
+            end
+            while IsPlayerAvailable() == false and NavIsReady() == false do
+                yield("/wait 1")
+            end
+            if IsPlayerAvailable() and NavIsReady() then
+                PathfindAndMoveTo(-122.7251, 18.0000, 20.3941)
+                yield("/wait 1")
+            end
+            while PathIsRunning() or PathfindInProgress() do
+                yield("/wait 1")
+            end
+            if PathIsRunning() == false or PathfindInProgress() == false then
+                PathfindAndMoveTo(-122.7251, 18.0000, 20.3941)
+                yield("/wait 1")
+            end
+            yield("/target Summoning Bell")
+            while GetTargetName() == "" do
+            yield("/target Summoning Bell")
+            end
+            while GetTargetName() == "Summoning Bell" and GetDistanceToTarget() > 4.5 do
+                PathfindAndMoveTo(-122.7251, 18.0000, 20.3941)
+                yield("/wait 1")
+                while PathIsRunning() or PathfindInProgress() do
+                    yield("/wait 1")
+                end
+            end
+            if GetTargetName() == "Summoning Bell" and GetDistanceToTarget() <= 4.5 then
+            yield("/wait 0.5")
+            yield("/interact")
+            if IsAddonVisible("RetainerList") then
+            yield("/ays e")
+            yield("/echo [FATE] Processing retainers")
+            yield("/wait 1")
+            end
+            end
+
+            while ARRetainersWaitingToBeProcessed() do
+                yield("/wait 1")
+            end
+
+            yield("/wait 1")
+            yield("/waitaddon RetainerList")
+            yield("/echo [FATE] Finished processing retainers")
+            yield("/wait 1")
+            yield("/callback RetainerList true -1")
+            yield("/wait 1")
+            while IsAddonVisible("RetainerList") do
+                yield("/callback RetainerList true -1")
+                yield("/wait 1")
+            end
+
+            --Deliveroo
+            if TurnIn and HasPlugin("Deliveroo") then
+                if GetInventoryFreeSlotCount() < slots and TurnIn == true then
+                    yield("/li gc")
+                end
+                while DeliverooIsTurnInRunning() == false do
+                    yield("/wait 1")
+                    yield("/deliveroo enable")
+                end
+                if DeliverooIsTurnInRunning() then
+                    PathStop()
+                end
+                while DeliverooIsTurnInRunning() do
+                    yield("/wait 1")
+                end
+            end
+        end
+    end
+end
+
 ---------------------------Beginning of the Code------------------------------------
 
 --vnavmesh building
@@ -1619,6 +1796,8 @@ LastTeleportTimeStamp = 0
 --Start of the Loop
 
 LogInfo("[FATE] Starting fate farming script.")
+
+CheckNonCombatToDos()
 
 while true do
     LogInfo("[FATE] Starting new iteration.")
@@ -1678,7 +1857,7 @@ while true do
             end
         elseif GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 75 + GetFateRadius(CurrentFate.fateId) and not fateEnemyNav then
             LogInfo("[Fate] Targeting closest enemey")
-            TargetClosestEnemy(75)
+            TargetClosestFateEnemy()
             LogInfo("[Fate] Fate target ID: "..GetTargetFateID())
             if HasTarget() and GetTargetFateID() > 0 then
                 --PathStop()
@@ -1716,7 +1895,7 @@ while true do
             end
         elseif IsInFate() and not fateEnemyNav then
             LogInfo("[Fate] Targeting closest enemey")
-            TargetClosestEnemy(75)
+            TargetClosestFateEnemy()
             LogInfo("[Fate] Fate target ID: "..GetTargetFateID())
             if HasTarget() and GetTargetFateID() > 0 then
                 --PathStop()
@@ -1739,7 +1918,7 @@ while true do
     if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 then
         InteractWithFateNpc(CurrentFate)
     else
-        if not UsePandoraSync and not IsLevelSync() and GetPlayerLevel() > CurrentFate.fateMaxLevel then
+        if not UsePandoraSync and not IsLevelSync() and GetLevel() > CurrentFate.fateMaxLevel then
             yield("/lsync")
         end
     end
@@ -1787,181 +1966,7 @@ while true do
     -----------------------------After Fate------------------------------------------
     HandleUnexpectedCombat()
 
-    --food usage
-    if not (GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition)) then
-        if not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) then
-            while not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) do
-                while GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition) do
-                    yield("/wait 1")
-                end
-                yield("/item " .. Food)
-                yield("/wait 2")
-                FoodCheck = FoodCheck + 1
-            end
-            if FoodCheck >= 10 then
-                yield("/echo [FATE] no Food left <se.1>")
-            end
-            if HasStatusId(48) then
-                FoodCheck = 0
-            end
-        end
-    end
-
-    --Repair function
-    if RepairAmount > 0 and not GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.inCombat) then
-        if NeedsRepair(RepairAmount) then
-            while not IsAddonVisible("Repair") do
-                LogInfo("[FATE] Opening repair menu...")
-                yield("/generalaction repair")
-                yield("/wait 0.5")
-            end
-            yield("/callback Repair true 0")
-            yield("/wait 0.1")
-            if IsAddonVisible("SelectYesno") then
-                yield("/callback SelectYesno true 0")
-                yield("/wait 0.1")
-            end
-            while GetCharacterCondition(CharacterCondition.occupied39) do
-                LogInfo("[FATE] Repairing...")
-                yield("/wait 1") 
-            end
-            yield("/wait 1")
-            yield("/callback Repair true -1")
-        end
-    end
-
-    --Materia Extraction function
-    if ExtractMateria and not GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.inCombat) then
-        if CanExtractMateria(100) then
-            yield("/generalaction \"Materia Extraction\"")
-            yield("/waitaddon Materialize")
-            while CanExtractMateria(100) == true and GetInventoryFreeSlotCount() > 1 and not GetCharacterCondition(CharacterCondition.inCombat) do
-                LogInfo("[FATE] Extracting materia...")
-                if not IsAddonVisible("Materialize") then
-                    yield("/generalaction \"Materia Extraction\"")
-                    yield("/wait 0.5")
-                end
-                while not IsAddonVisible("Materialize") do
-                    yield("/wait 0.5")
-                end
-                yield("/pcall Materialize true 2")
-                yield("/wait 0.5")
-                if IsAddonVisible("MaterializeDialog") then
-                    yield("/pcall MaterializeDialog true 0")
-                    yield("/wait 0.1")
-                end
-                while GetCharacterCondition(39) do
-                    yield("/wait 0.5")
-                end
-            end 
-            yield("/wait 1")
-            yield("/pcall Materialize true -1")
-            yield("/echo [FATE] Extracted all materia")
-            yield("/wait 1")
-        end
-    end
-
-    if CanExtractMateria(100) and Extract and not GetCharacterCondition(CharacterCondition.casting) then
-        yield("/generalaction \"Materia Extraction\"")
-        yield("/waitaddon Materialize")
-        while CanExtractMateria(100) == true and not GetCharacterCondition(CharacterCondition.casting) and GetInventoryFreeSlotCount() > 1 do
-            LogInfo("[FATE] Extracting materia 2...")
-            if not IsAddonVisible("Materialize") then
-                yield("/generalaction \"Materia Extraction\"")
-            end
-                yield("/pcall Materialize true 2")
-                yield("/wait 0.5")
-            if IsAddonVisible("MaterializeDialog") then
-                yield("/pcall MaterializeDialog true 0")
-                yield("/wait 0.1")
-            end
-            while GetCharacterCondition(39) do
-                yield("/wait 0.5")
-            end
-        end 
-        yield("/wait 1")
-        yield("/pcall Materialize true -1")
-        yield("/echo [FATE] Extracted all materia")
-        yield("/wait 1")
-    end
-
-    --Retainer Process
-    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) and
-       (not WaitIfBonusBuff or not (HasStatusId(1288) or HasStatusId(1289))) then
-        LogInfo("[FATE] Handling retainers...")
-        if ARRetainersWaitingToBeProcessed() == true then
-            while not IsInZone(129) do
-                TeleportTo("Limsa Lominsa Lower Decks")
-            end
-            while IsPlayerAvailable() == false and NavIsReady() == false do
-                yield("/wait 1")
-            end
-            if IsPlayerAvailable() and NavIsReady() then
-                PathfindAndMoveTo(-122.7251, 18.0000, 20.3941)
-                yield("/wait 1")
-            end
-            while PathIsRunning() or PathfindInProgress() do
-                yield("/wait 1")
-            end
-            if PathIsRunning() == false or PathfindInProgress() == false then
-                PathfindAndMoveTo(-122.7251, 18.0000, 20.3941)
-                yield("/wait 1")
-            end
-            yield("/target Summoning Bell")
-            while GetTargetName() == "" do
-            yield("/target Summoning Bell")
-            end 
-            while GetTargetName() == "Summoning Bell" and GetDistanceToTarget() > 4.5 do
-                PathfindAndMoveTo(-122.7251, 18.0000, 20.3941)
-                yield("/wait 1")
-                while PathIsRunning() or PathfindInProgress() do
-                    yield("/wait 1")
-                end
-            end
-            if GetTargetName() == "Summoning Bell" and GetDistanceToTarget() <= 4.5 then
-            yield("/wait 0.5")
-            yield("/interact")
-            if IsAddonVisible("RetainerList") then
-            yield("/ays e")
-            yield("/echo [FATE] Processing retainers")
-            yield("/wait 1")
-            end
-            end
-        
-            while ARRetainersWaitingToBeProcessed() do
-                yield("/wait 1")
-            end
-
-            yield("/wait 1")
-            yield("/waitaddon RetainerList")
-            yield("/echo [FATE] Finished processing retainers")
-            yield("/wait 1")
-            yield("/callback RetainerList true -1")
-            yield("/wait 1")
-            while IsAddonVisible("RetainerList") do
-                yield("/callback RetainerList true -1")
-                yield("/wait 1")
-            end
-
-            --Deliveroo
-            if TurnIn and HasPlugin("Deliveroo") then
-                if GetInventoryFreeSlotCount() < slots and TurnIn == true then
-                    yield("/li gc")
-                end
-                while DeliverooIsTurnInRunning() == false do
-                    yield("/wait 1")
-                    yield("/deliveroo enable")
-                end
-                if DeliverooIsTurnInRunning() then
-                    PathStop()
-                end
-                while DeliverooIsTurnInRunning() do
-                    yield("/wait 1")
-                end
-            end
-        end
-    end
-
+    CheckNonCombatToDos()
 
     ---------------------------Notification tab--------------------------------------
     local bicolorGemCount = GetItemCount(26807)
